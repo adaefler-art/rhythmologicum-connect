@@ -89,6 +89,14 @@ interface ErrorDetails {
   retryable: boolean
 }
 
+function isUc1SafetyRoute(value: string | undefined | null): value is Uc1SafetyRoute {
+  if (!value) {
+    return false
+  }
+
+  return Object.values(UC1_SAFETY_ROUTE).includes(value as Uc1SafetyRoute)
+}
+
 // ============================================================
 // Main Component
 // ============================================================
@@ -256,14 +264,21 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
     if (!runtime) return null
 
     try {
+      const routeFromQuery = searchParams.get('triageSafetyRoute')
       const triageResult = getLastTriageResult()
+      const triageSafetyRoute = isUc1SafetyRoute(routeFromQuery)
+        ? routeFromQuery
+        : isUc1SafetyRoute(triageResult?.safetyRoute)
+          ? triageResult.safetyRoute
+          : undefined
+
       const response = await fetch(
         `/api/funnels/${slug}/assessments/${runtime.assessmentId}/steps/${stepId}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            triageSafetyRoute: triageResult?.safetyRoute,
+            triageSafetyRoute,
           }),
         },
       )
@@ -277,7 +292,7 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
     } catch {
       return null
     }
-  }, [slug, runtime])
+  }, [slug, runtime, searchParams])
 
   const completeAssessment = useCallback(async (): Promise<boolean> => {
     if (!runtime) return false

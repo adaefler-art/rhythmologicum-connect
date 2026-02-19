@@ -60,16 +60,25 @@ export function mapNextActionToRoute(
 
     case TRIAGE_NEXT_ACTION.START_FUNNEL_A:
       // Navigate to stress/resilience funnel
+      {
+      const query: Record<string, string> = {
+        source: 'triage',
+      }
+
+      if (triageResult.safetyRoute) {
+        query.triageSafetyRoute = triageResult.safetyRoute
+      }
+
       return {
         path: '/patient/funnel/stress-resilience',
-        query: {
-          source: 'triage',
-        },
+        query,
         state: {
           triageRationale: triageResult.rationale,
           triageTier: triageResult.tier,
+          triageSafetyRoute: triageResult.safetyRoute,
         },
         description: 'Start Stress & Resilience Assessment (Funnel A)',
+      }
       }
 
     case TRIAGE_NEXT_ACTION.START_FUNNEL_B:
@@ -102,18 +111,27 @@ export function mapNextActionToRoute(
 
     case TRIAGE_NEXT_ACTION.SHOW_ESCALATION:
       // Navigate to escalation/support page
+      {
+      const query: Record<string, string> = {
+        source: 'triage',
+        tier: triageResult.tier,
+      }
+
+      if (triageResult.safetyRoute) {
+        query.route = triageResult.safetyRoute
+      }
+
       return {
         path: '/patient/support',
-        query: {
-          source: 'triage',
-          tier: triageResult.tier,
-        },
+        query,
         state: {
           triageRationale: triageResult.rationale,
           redFlags: triageResult.redFlags,
           urgent: true,
+          triageSafetyRoute: triageResult.safetyRoute,
         },
         description: 'Show escalation support (ESCALATE tier)',
+      }
       }
 
     default:

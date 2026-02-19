@@ -12,7 +12,7 @@ import {
   isRoutableAction,
   type TriageRoute,
 } from '../router'
-import { TRIAGE_NEXT_ACTION, TRIAGE_TIER } from '@/lib/api/contracts/triage'
+import { TRIAGE_NEXT_ACTION, TRIAGE_TIER, UC1_SAFETY_ROUTE } from '@/lib/api/contracts/triage'
 import type { TriageResultV1 } from '@/lib/api/contracts/triage'
 
 describe('lib/triage/router', () => {
@@ -57,6 +57,24 @@ describe('lib/triage/router', () => {
         triageTier: TRIAGE_TIER.ASSESSMENT,
       })
       expect(route.description).toContain('Funnel A')
+    })
+
+    it('propagates triageSafetyRoute in START_FUNNEL_A query when present', () => {
+      const result = createTriageResult(
+        TRIAGE_NEXT_ACTION.START_FUNNEL_A,
+        TRIAGE_TIER.ASSESSMENT,
+      )
+      result.safetyRoute = UC1_SAFETY_ROUTE.DRINGENDER_TERMIN
+
+      const route = mapNextActionToRoute(TRIAGE_NEXT_ACTION.START_FUNNEL_A, result)
+
+      expect(route.query).toEqual({
+        source: 'triage',
+        triageSafetyRoute: UC1_SAFETY_ROUTE.DRINGENDER_TERMIN,
+      })
+      expect(route.state).toMatchObject({
+        triageSafetyRoute: UC1_SAFETY_ROUTE.DRINGENDER_TERMIN,
+      })
     })
 
     it('AC1: maps START_FUNNEL_B to sleep funnel', () => {
@@ -107,6 +125,26 @@ describe('lib/triage/router', () => {
         urgent: true,
       })
       expect(route.description).toContain('escalation')
+    })
+
+    it('propagates safety route to escalation query when present', () => {
+      const result = createTriageResult(
+        TRIAGE_NEXT_ACTION.SHOW_ESCALATION,
+        TRIAGE_TIER.ESCALATE,
+      )
+      result.redFlags = ['answer_pattern']
+      result.safetyRoute = UC1_SAFETY_ROUTE.NOTRUF
+
+      const route = mapNextActionToRoute(TRIAGE_NEXT_ACTION.SHOW_ESCALATION, result)
+
+      expect(route.query).toMatchObject({
+        source: 'triage',
+        tier: TRIAGE_TIER.ESCALATE,
+        route: UC1_SAFETY_ROUTE.NOTRUF,
+      })
+      expect(route.state).toMatchObject({
+        triageSafetyRoute: UC1_SAFETY_ROUTE.NOTRUF,
+      })
     })
 
     it('AC2: is deterministic - same input produces same output', () => {
