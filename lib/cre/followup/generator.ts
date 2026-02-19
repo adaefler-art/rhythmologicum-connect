@@ -59,6 +59,8 @@ const getFollowupLifecycle = (structuredData: StructuredIntakeData) => {
     skipped_question_ids: lifecycle?.skipped_question_ids ?? [],
     resumed_at: lifecycle?.resumed_at ?? null,
     completed_at: lifecycle?.completed_at ?? null,
+    savepoints: lifecycle?.savepoints ?? [],
+    active_block_id: lifecycle?.active_block_id ?? null,
   } as const
 }
 
@@ -427,6 +429,129 @@ const OBJECTIVE_SLOTS: ObjectiveSlotDefinition[] = [
   },
 ]
 
+const OBJECTIVE_BLOCK_ORDER = [
+  'core_symptom_profile',
+  'medical_context',
+  'supporting_context',
+  'program_specific',
+] as const
+
+const OBJECTIVE_BLOCK_BY_ID: Record<string, (typeof OBJECTIVE_BLOCK_ORDER)[number]> = {
+  'objective:chief-complaint': 'core_symptom_profile',
+  'objective:onset': 'core_symptom_profile',
+  'objective:duration': 'core_symptom_profile',
+  'objective:course': 'core_symptom_profile',
+  'objective:trigger': 'core_symptom_profile',
+  'objective:frequency': 'core_symptom_profile',
+  'objective:associated-symptoms': 'core_symptom_profile',
+  'objective:aggravating-relieving-factors': 'core_symptom_profile',
+  'objective:relevant-negatives': 'core_symptom_profile',
+  'objective:medication': 'medical_context',
+  'objective:past-medical-history': 'medical_context',
+  'objective:prior-findings-upload': 'medical_context',
+  'objective:psychosocial': 'supporting_context',
+}
+
+const isObjectiveCompletedForPatient = (status: ClinicalFollowupObjectiveStatus) =>
+  status === 'resolved' ||
+  status === 'answered' ||
+  status === 'verified' ||
+  status === 'blocked_by_safety'
+
+const areIdSetsEqual = (left: string[], right: string[]) => {
+  if (left.length !== right.length) return false
+  const sortedLeft = [...left].sort()
+  const sortedRight = [...right].sort()
+  return sortedLeft.every((entry, index) => entry === sortedRight[index])
+}
+
+const buildLifecycleSavepoints = (params: {
+  objectives: ClinicalFollowupObjective[]
+  now: Date
+  previousSavepoints?: Array<{
+    block_id: string
+    status: 'in_progress' | 'completed'
+    total_objective_ids: string[]
+    completed_objective_ids: string[]
+    updated_at: string
+  }>
+}) => {
+  const previousByBlock = new Map(
+    (params.previousSavepoints ?? []).map((entry) => [entry.block_id, entry]),
+  )
+
+  const bucket = new Map<
+    string,
+    {
+      total: string[]
+      completed: string[]
+    }
+  >()
+
+  for (const objective of params.objectives) {
+    const blockId = OBJECTIVE_BLOCK_BY_ID[objective.id] ?? 'program_specific'
+    const current = bucket.get(blockId) ?? { total: [], completed: [] }
+    current.total.push(objective.id)
+    if (isObjectiveCompletedForPatient(objective.status)) {
+      current.completed.push(objective.id)
+    }
+    bucket.set(blockId, current)
+  }
+
+  const savepoints = OBJECTIVE_BLOCK_ORDER
+    .filter((blockId) => (bucket.get(blockId)?.total.length ?? 0) > 0)
+    .map((blockId) => {
+      const block = bucket.get(blockId) ?? { total: [], completed: [] }
+      const status: 'in_progress' | 'completed' =
+        block.total.length > 0 && block.completed.length === block.total.length
+          ? 'completed'
+          : 'in_progress'
+
+      const previous = previousByBlock.get(blockId)
+      const unchanged =
+        previous &&
+        previous.status === status &&
+        areIdSetsEqual(previous.total_objective_ids, block.total) &&
+        areIdSetsEqual(previous.completed_objective_ids, block.completed)
+
+      return {
+        block_id: blockId,
+        status,
+        total_objective_ids: block.total,
+        completed_objective_ids: block.completed,
+        updated_at: unchanged ? previous.updated_at : params.now.toISOString(),
+      }
+    })
+
+  return {
+    savepoints,
+    active_block_id: savepoints.find((entry) => entry.status === 'in_progress')?.block_id ?? null,
+  }
+}
+
+const finalizeReadinessSnapshot = (params: {
+  readiness: ClinicalReadinessSnapshot
+  lifecycleState: 'active' | 'needs_review' | 'completed'
+  savepoints: Array<{ status: 'in_progress' | 'completed' }>
+}) => {
+  const allBlocksCompleted =
+    params.savepoints.length > 0 && params.savepoints.every((entry) => entry.status === 'completed')
+
+  if (
+    params.lifecycleState === 'completed' &&
+    params.readiness.state === 'VisitReady' &&
+    !params.readiness.uc2_triggered &&
+    allBlocksCompleted
+  ) {
+    return {
+      ...params.readiness,
+      state: 'ProgramReady' as const,
+    }
+  }
+
+  return params.readiness
+}
+
 const getActiveObjectiveSlots = (structuredData: StructuredIntakeData) => {
   const uc2Active = evaluateUc2TriggerReasons(structuredData).length > 0
   return OBJECTIVE_SLOTS.filter((slot) => !slot.requiresUc2 || uc2Active)
@@ -628,9 +753,20 @@ export const mergeClinicianRequestedItemsIntoFollowup = (params: {
   const existingFollowup = params.structuredData.followup
   const lifecycle = getFollowupLifecycle(params.structuredData)
   const objectiveSnapshot = buildFollowupObjectives(params.structuredData)
-  const readiness = buildReadinessSnapshot({
+  const readinessBase = buildReadinessSnapshot({
     structuredData: params.structuredData,
     blockedBySafety: objectiveSnapshot.blockedBySafety,
+  })
+  const lifecycleState: 'active' | 'needs_review' | 'completed' = 'needs_review'
+  const savepointSnapshot = buildLifecycleSavepoints({
+    objectives: objectiveSnapshot.objectives,
+    now,
+    previousSavepoints: lifecycle.savepoints,
+  })
+  const readiness = finalizeReadinessSnapshot({
+    readiness: readinessBase,
+    lifecycleState,
+    savepoints: savepointSnapshot.savepoints,
   })
   const askedIds = new Set([
     ...(existingFollowup?.asked_question_ids ?? []),
@@ -670,7 +806,9 @@ export const mergeClinicianRequestedItemsIntoFollowup = (params: {
       readiness,
       lifecycle: {
         ...lifecycle,
-        state: 'needs_review',
+        state: lifecycleState,
+        savepoints: savepointSnapshot.savepoints,
+        active_block_id: savepointSnapshot.active_block_id,
       },
     },
   }
@@ -686,12 +824,23 @@ export const generateFollowupQuestions = (params: {
   const existingFollowup = structuredData.followup
   const lifecycle = getFollowupLifecycle(structuredData)
   const objectiveSnapshot = buildFollowupObjectives(structuredData)
-  const readiness = buildReadinessSnapshot({
+  const readinessBase = buildReadinessSnapshot({
     structuredData,
     blockedBySafety: objectiveSnapshot.blockedBySafety,
   })
 
   if (lifecycle.state === 'completed') {
+    const savepointSnapshot = buildLifecycleSavepoints({
+      objectives: objectiveSnapshot.objectives,
+      now,
+      previousSavepoints: lifecycle.savepoints,
+    })
+    const readiness = finalizeReadinessSnapshot({
+      readiness: readinessBase,
+      lifecycleState: 'completed',
+      savepoints: savepointSnapshot.savepoints,
+    })
+
     return {
       next_questions: [],
       queue: [],
@@ -707,11 +856,26 @@ export const generateFollowupQuestions = (params: {
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
       objective_state_overrides: getObjectiveStateOverrides(structuredData),
       readiness,
-      lifecycle,
+      lifecycle: {
+        ...lifecycle,
+        savepoints: savepointSnapshot.savepoints,
+        active_block_id: savepointSnapshot.active_block_id,
+      },
     }
   }
 
   if (objectiveSnapshot.blockedBySafety) {
+    const savepointSnapshot = buildLifecycleSavepoints({
+      objectives: objectiveSnapshot.objectives,
+      now,
+      previousSavepoints: lifecycle.savepoints,
+    })
+    const readiness = finalizeReadinessSnapshot({
+      readiness: readinessBase,
+      lifecycleState: 'active',
+      savepoints: savepointSnapshot.savepoints,
+    })
+
     return {
       next_questions: [],
       queue: [],
@@ -730,6 +894,8 @@ export const generateFollowupQuestions = (params: {
       lifecycle: {
         ...lifecycle,
         state: 'active',
+        savepoints: savepointSnapshot.savepoints,
+        active_block_id: savepointSnapshot.active_block_id,
       },
     }
   }
@@ -763,6 +929,25 @@ export const generateFollowupQuestions = (params: {
       return a.id.localeCompare(b.id)
     })
 
+  const lifecycleState: 'active' | 'needs_review' | 'completed' =
+    allCandidates.length === 0
+      ? readinessBase.uc2_triggered
+        ? 'needs_review'
+        : 'completed'
+      : 'active'
+
+  const savepointSnapshot = buildLifecycleSavepoints({
+    objectives: objectiveSnapshot.objectives,
+    now,
+    previousSavepoints: lifecycle.savepoints,
+  })
+
+  const readiness = finalizeReadinessSnapshot({
+    readiness: readinessBase,
+    lifecycleState,
+    savepoints: savepointSnapshot.savepoints,
+  })
+
   return {
     next_questions: allCandidates.slice(0, MAX_NEXT_QUESTIONS),
     queue: allCandidates.slice(MAX_NEXT_QUESTIONS),
@@ -774,16 +959,13 @@ export const generateFollowupQuestions = (params: {
     readiness,
     lifecycle: {
       ...lifecycle,
-      state:
-        allCandidates.length === 0
-          ? readiness.uc2_triggered
-            ? 'needs_review'
-            : 'completed'
-          : 'active',
+      state: lifecycleState,
       completed_at:
-        allCandidates.length === 0 && !readiness.uc2_triggered
+        allCandidates.length === 0 && !readinessBase.uc2_triggered
           ? now.toISOString()
           : lifecycle.completed_at,
+      savepoints: savepointSnapshot.savepoints,
+      active_block_id: savepointSnapshot.active_block_id,
     },
   }
 }
@@ -795,9 +977,21 @@ export const appendAskedQuestionIds = (params: {
   const existingAsked = new Set(params.structuredData.followup?.asked_question_ids ?? [])
   const lifecycle = getFollowupLifecycle(params.structuredData)
   const objectiveSnapshot = buildFollowupObjectives(params.structuredData)
-  const readiness = buildReadinessSnapshot({
+  const readinessBase = buildReadinessSnapshot({
     structuredData: params.structuredData,
     blockedBySafety: objectiveSnapshot.blockedBySafety,
+  })
+  const lifecycleState = lifecycle.state
+  const now = new Date()
+  const savepointSnapshot = buildLifecycleSavepoints({
+    objectives: objectiveSnapshot.objectives,
+    now,
+    previousSavepoints: lifecycle.savepoints,
+  })
+  const readiness = finalizeReadinessSnapshot({
+    readiness: readinessBase,
+    lifecycleState,
+    savepoints: savepointSnapshot.savepoints,
   })
 
   for (const id of params.askedQuestionIds) {
@@ -817,7 +1011,11 @@ export const appendAskedQuestionIds = (params: {
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
       objective_state_overrides: getObjectiveStateOverrides(params.structuredData),
       readiness,
-      lifecycle,
+      lifecycle: {
+        ...lifecycle,
+        savepoints: savepointSnapshot.savepoints,
+        active_block_id: savepointSnapshot.active_block_id,
+      },
     },
   }
 }
@@ -832,7 +1030,7 @@ export const transitionFollowupLifecycle = (params: {
   const existing = params.structuredData.followup
   const lifecycle = getFollowupLifecycle(params.structuredData)
   const objectiveSnapshot = buildFollowupObjectives(params.structuredData)
-  const readiness = buildReadinessSnapshot({
+  const readinessBase = buildReadinessSnapshot({
     structuredData: params.structuredData,
     blockedBySafety: objectiveSnapshot.blockedBySafety,
   })
@@ -874,6 +1072,18 @@ export const transitionFollowupLifecycle = (params: {
         ? 'active'
         : 'completed'
 
+  const savepointSnapshot = buildLifecycleSavepoints({
+    objectives: objectiveSnapshot.objectives,
+    now,
+    previousSavepoints: lifecycle.savepoints,
+  })
+
+  const readiness = finalizeReadinessSnapshot({
+    readiness: readinessBase,
+    lifecycleState: nextState,
+    savepoints: savepointSnapshot.savepoints,
+  })
+
   return {
     ...params.structuredData,
     followup: {
@@ -891,6 +1101,8 @@ export const transitionFollowupLifecycle = (params: {
         skipped_question_ids: Array.from(skippedIds),
         resumed_at: params.action === 'resume' ? now.toISOString() : lifecycle.resumed_at,
         completed_at: nextState === 'completed' ? now.toISOString() : null,
+        savepoints: savepointSnapshot.savepoints,
+        active_block_id: savepointSnapshot.active_block_id,
       },
     },
   }

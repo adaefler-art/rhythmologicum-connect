@@ -227,6 +227,14 @@ export interface ClinicalFollowup {
     skipped_question_ids: string[]
     resumed_at?: string | null
     completed_at?: string | null
+    savepoints?: Array<{
+      block_id: string
+      status: 'in_progress' | 'completed'
+      total_objective_ids: string[]
+      completed_objective_ids: string[]
+      updated_at: string
+    }>
+    active_block_id?: string | null
   }
 }
 

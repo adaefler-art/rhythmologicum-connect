@@ -116,9 +116,14 @@ Definition of Done:
 - [ ] Dropout-Risiko aktiv gemessen und begrenzt (Zeit/Abbruchstellen transparent)
 
 Arbeitspakete:
-- [ ] UC3-01 Abschnittsbasierte Savepoints je Intake-Block
+- [~] UC3-01 Abschnittsbasierte Savepoints je Intake-Block
+	- [x] Follow-up-Lifecycle erweitert um blockbasierte Savepoints (`core_symptom_profile`, `medical_context`, `supporting_context`, `program_specific`)
+	- [x] `active_block_id` für deterministisches Resume auf ersten offenen Intake-Block ergänzt
+	- [x] Regressionstests für Savepoint-Ableitung ergänzt
 - [ ] UC3-02 Resume-UX nach Abbruch ohne Re-Ask abgeschlossener Blöcke
-- [ ] UC3-03 Program-Readiness-Output als strukturiertes Artefakt
+- [~] UC3-03 Program-Readiness-Output als strukturiertes Artefakt
+	- [x] Runtime leitet `ProgramReady` deterministisch ab, wenn Follow-up abgeschlossen und alle Savepoint-Blöcke completed sind
+	- [ ] API/Export-Contract für explizites Program-Readiness-Artefakt nachziehen
 
 ---
 
@@ -218,6 +223,7 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-19: UC2-03 serverseitig gehärtet: `GET /api/clinician/patient/[patientId]/clinical-intake/latest` liefert `case_checklist`-Snapshot (`entries`, `open_loop_count`, `status_counts`), Clinician-UI nutzt primär Server-Snapshot mit Fallback; API-Route-Test ergänzt (`apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/latest/route.ts`, `apps/rhythm-studio-ui/lib/fetchClinician.ts`, `apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx`, `apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/latest/__tests__/route.test.ts`).
 - 2026-02-19: UC2-03 Negativfall abgesichert: zusätzlicher Contract-Test bestätigt leeren `case_checklist`-Snapshot bei fehlenden Follow-up-Objectives (`apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/latest/__tests__/route.test.ts`).
 - 2026-02-19: UC2 abgeschlossen (v0.8 Technical Scope): ergänzende Checklist-Mapping-Regressionen (`invalid status -> unclear`, offene Loops -> Requested-Item-Suggestions) plus Abschlussmarkierung UC2-01/02/03 (`lib/cre/followup/__tests__/clinicianChecklist.test.ts`, `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-19.md`).
+- 2026-02-19: UC3 gestartet (Technical Slice): blockbasierte Savepoints + `active_block_id` im Follow-up-Lifecycle implementiert sowie `ProgramReady`-Ableitung bei abgeschlossenen Blöcken ergänzt; Regressionstests erweitert (`lib/cre/followup/generator.ts`, `lib/cre/followup/schema.ts`, `lib/types/clinicalIntake.ts`, `lib/cre/followup/__tests__/generator.test.ts`).
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).

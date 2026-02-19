@@ -489,6 +489,64 @@ describe('followup generator', () => {
     expect(objectiveIds).not.toContain('objective:relevant-negatives')
   })
 
+  it('derives ProgramReady when all non-UC2 intake blocks are complete', () => {
+    const generated = generateFollowupQuestions({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Migräne',
+        history_of_present_illness: {
+          onset: 'vor 3 Tagen',
+          duration: '2 Stunden',
+          course: 'unveraendert',
+          trigger: 'Stress',
+          frequency: 'taeglich',
+        },
+        medication: ['Ibuprofen 400mg bei Bedarf'],
+        past_medical_history: ['Migräne'],
+        prior_findings_documents: [{ id: 'doc-1', name: 'befund.pdf' }],
+        psychosocial_factors: ['Arbeitsbelastung'],
+        followup: {
+          next_questions: [],
+          queue: [],
+          asked_question_ids: [],
+          last_generated_at: '2026-02-20T00:00:00.000Z',
+        },
+      },
+      now: new Date('2026-02-20T10:00:00.000Z'),
+    })
+
+    expect(generated.lifecycle?.state).toBe('completed')
+    expect(generated.readiness?.state).toBe('ProgramReady')
+    expect(generated.lifecycle?.active_block_id).toBeNull()
+    expect((generated.lifecycle?.savepoints ?? []).every((entry) => entry.status === 'completed')).toBe(
+      true,
+    )
+  })
+
+  it('emits in-progress savepoints and active block id for partial long-flow data', () => {
+    const generated = generateFollowupQuestions({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Schwindel',
+        followup: {
+          next_questions: [],
+          queue: [],
+          asked_question_ids: [],
+          last_generated_at: '2026-02-20T00:00:00.000Z',
+        },
+      },
+      now: new Date('2026-02-20T10:00:00.000Z'),
+    })
+
+    const coreSavepoint = (generated.lifecycle?.savepoints ?? []).find(
+      (entry) => entry.block_id === 'core_symptom_profile',
+    )
+
+    expect(coreSavepoint?.status).toBe('in_progress')
+    expect(generated.lifecycle?.active_block_id).toBe('core_symptom_profile')
+    expect(generated.readiness?.state).toBe('VisitReady')
+  })
+
   it('transitions lifecycle via skip and complete without repeating asked questions', () => {
     const structuredData = {
       status: 'draft' as const,

@@ -67,6 +67,18 @@ export const clinicalFollowupSchema = z.object({
       skipped_question_ids: z.array(z.string().min(1)),
       resumed_at: z.string().nullable().optional(),
       completed_at: z.string().nullable().optional(),
+      savepoints: z
+        .array(
+          z.object({
+            block_id: z.string().min(1),
+            status: z.union([z.literal('in_progress'), z.literal('completed')]),
+            total_objective_ids: z.array(z.string().min(1)),
+            completed_objective_ids: z.array(z.string().min(1)),
+            updated_at: z.string().min(1),
+          }),
+        )
+        .optional(),
+      active_block_id: z.string().nullable().optional(),
     })
     .optional(),
 })
