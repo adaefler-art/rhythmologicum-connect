@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import ContentPageEditor, { ContentPageEditorData } from '@/app/components/ContentPageEditor'
 
 export const dynamic = 'force-dynamic'
@@ -23,8 +22,10 @@ function toLookupCandidates(rawKey: string): string[] {
   return uniqueCandidates
 }
 
-async function fetchContentPageByKey(key: string) {
-  const adminClient = createAdminSupabaseClient()
+async function fetchContentPageByKey(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  key: string,
+) {
   const isUuid = UUID_REGEX.test(key)
 
   const baseSelect = `
@@ -42,7 +43,7 @@ async function fetchContentPageByKey(key: string) {
     order_index
   `
 
-  const { data: exactMatch, error: exactMatchError } = await adminClient
+  const { data: exactMatch, error: exactMatchError } = await supabase
     .from('content_pages')
     .select(baseSelect)
     .eq(isUuid ? 'id' : 'slug', key)
@@ -73,7 +74,7 @@ async function fetchContentPageByKey(key: string) {
     return null
   }
 
-  const { data: slugMatch, error: slugMatchError } = await adminClient
+  const { data: slugMatch, error: slugMatchError } = await supabase
     .from('content_pages')
     .select(baseSelect)
     .ilike('slug', key)
@@ -104,11 +105,14 @@ async function fetchContentPageByKey(key: string) {
   } satisfies ContentPageEditorData
 }
 
-async function loadContentPage(rawKey: string) {
+async function loadContentPage(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  rawKey: string,
+) {
   const lookupCandidates = toLookupCandidates(rawKey)
 
   for (const candidate of lookupCandidates) {
-    const contentPage = await fetchContentPageByKey(candidate)
+    const contentPage = await fetchContentPageByKey(supabase, candidate)
     if (contentPage) {
       return contentPage
     }
@@ -142,7 +146,7 @@ export default async function EditContentPage({ params }: PageProps) {
   let loadError: string | null = null
 
   try {
-    contentPage = await loadContentPage(slug)
+    contentPage = await loadContentPage(supabase, slug)
   } catch (error) {
     loadError = error instanceof Error ? error.message : 'Fehler beim Laden'
   }
@@ -165,10 +169,6 @@ export default async function EditContentPage({ params }: PageProps) {
 
   if (!contentPage) {
     notFound()
-  }
-
-  if (UUID_REGEX.test(slug) && contentPage.slug && contentPage.slug !== slug) {
-    redirect(`/admin/content/${contentPage.slug}`)
   }
 
   return (
