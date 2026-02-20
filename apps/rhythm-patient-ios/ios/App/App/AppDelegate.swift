@@ -6,11 +6,12 @@ import LocalAuthentication
 import WebKit
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UITabBarControllerDelegate {
 
     var window: UIWindow?
     private weak var startWebRootViewController: UIViewController?
     private weak var tabBarControllerRef: UITabBarController?
+    private weak var statusNavigationControllerRef: UINavigationController?
     private var sessionKeepAliveTimer: Timer?
     private var isUnlockInProgress = false
     private var lastBackgroundAt: Date?
@@ -61,8 +62,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         accountHostingController.title = "Konto"
         accountHostingController.tabBarItem = UITabBarItem(title: "Konto", image: UIImage(systemName: "person.crop.circle"), tag: 2)
 
+        let statusPlaceholderController = UIViewController()
+        statusPlaceholderController.view.backgroundColor = .systemGroupedBackground
+        statusPlaceholderController.title = "Status"
+        statusPlaceholderController.tabBarItem = UITabBarItem(title: "Status", image: UIImage(systemName: "checklist"), tag: 3)
+
         let startNavigationController = UINavigationController(rootViewController: webRootViewController)
         let chatNavigationController = UINavigationController(rootViewController: chatHostingController)
+        let statusNavigationController = UINavigationController(rootViewController: statusPlaceholderController)
         let accountNavigationController = UINavigationController(rootViewController: accountHostingController)
 
         startNavigationController.navigationBar.standardAppearance = navBarAppearance
@@ -77,6 +84,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         chatNavigationController.navigationBar.tintColor = .white
         chatNavigationController.navigationBar.isTranslucent = false
 
+        statusNavigationController.navigationBar.standardAppearance = navBarAppearance
+        statusNavigationController.navigationBar.scrollEdgeAppearance = navBarAppearance
+        statusNavigationController.navigationBar.compactAppearance = navBarAppearance
+        statusNavigationController.navigationBar.tintColor = .white
+        statusNavigationController.navigationBar.isTranslucent = false
+
         accountNavigationController.navigationBar.standardAppearance = navBarAppearance
         accountNavigationController.navigationBar.scrollEdgeAppearance = navBarAppearance
         accountNavigationController.navigationBar.compactAppearance = navBarAppearance
@@ -84,9 +97,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         accountNavigationController.navigationBar.isTranslucent = false
 
         let tabBarController = UITabBarController()
-        tabBarController.viewControllers = [startNavigationController, chatNavigationController, accountNavigationController]
+        tabBarController.viewControllers = [startNavigationController, chatNavigationController, statusNavigationController, accountNavigationController]
+        tabBarController.delegate = self
         tabBarController.selectedIndex = 0
         tabBarControllerRef = tabBarController
+        statusNavigationControllerRef = statusNavigationController
 
         let appWindow = UIWindow(frame: UIScreen.main.bounds)
         appWindow.rootViewController = tabBarController
@@ -301,6 +316,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
         return nil
+    }
+
+    func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
+        guard let statusNavigationController = statusNavigationControllerRef else { return true }
+
+        if viewController === statusNavigationController {
+            loadWebPath("/patient/status")
+            tabBarController.selectedIndex = 0
+            return false
+        }
+
+        return true
     }
 
 }

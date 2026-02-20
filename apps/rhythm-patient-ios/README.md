@@ -6,7 +6,7 @@ Hybrid iOS shell for the deployed patient web UI.
 
 - Loads deployed patient UI in an iOS `WKWebView` via Capacitor `server.url`
 - Starts at `/patient/start` (UC1 entry)
-- Uses native iOS bottom tab navigation in shell (`Start`, `Chat`)
+- Uses native iOS bottom tab navigation in shell (`Start`, `Chat`, `Status`, `Konto`)
 - Opens native chat client via dedicated `Chat` tab (separate from web navigation)
 - Preserves cookie/session behavior by using the first-party deployed domain
 - Adds lightweight diagnostics via query marker + user-agent suffix (no PHI)
