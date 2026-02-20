@@ -48,6 +48,21 @@ type CaseChecklistSnapshot = {
   status_counts: Record<CaseChecklistStatus, number>
 }
 
+type IntakeResponse = {
+  uuid: string
+  id: string
+  status: string
+  version_number: number
+  clinical_summary: string | null
+  structured_data: Record<string, unknown>
+  policy_override: PolicyOverride | null
+  trigger_reason: string | null
+  last_updated_from_messages: string[] | null
+  created_at: string
+  updated_at: string
+  case_checklist?: CaseChecklistSnapshot
+}
+
 const buildCaseChecklistSnapshot = (
   structuredData: Record<string, unknown> | null,
 ): CaseChecklistSnapshot => {
@@ -71,7 +86,7 @@ const buildCaseChecklistSnapshot = (
   }
 }
 
-const mapIntake = (intake: IntakeRecord | null) =>
+const mapIntake = (intake: IntakeRecord | null): IntakeResponse | null =>
   intake
     ? {
         uuid: intake.id,
