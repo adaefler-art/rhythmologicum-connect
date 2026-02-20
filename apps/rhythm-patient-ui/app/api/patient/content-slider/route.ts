@@ -42,6 +42,49 @@ export async function GET() {
     .order('created_at', { ascending: false })
     .limit(MAX_SLIDER_ITEMS)
 
+  if (error && error.code === '42703') {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('content_pages')
+      .select('id, slug, title, excerpt, priority, created_at')
+      .eq('status', 'published')
+      .is('deleted_at', null)
+      .ilike('category', START_SLIDER_TAG)
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(MAX_SLIDER_ITEMS)
+
+    if (fallbackError) {
+      console.error('[patient/content-slider] failed to load slider content (fallback)', {
+        errorCode: fallbackError.code,
+        errorMessage: fallbackError.message,
+      })
+
+      return NextResponse.json(
+        { success: false, error: { code: 'DB_ERROR', message: 'Inhalte konnten nicht geladen werden.' } },
+        { status: 500 },
+      )
+    }
+
+    const fallbackItems = (fallbackData as Array<Omit<SliderRow, 'teaser_image_url'>>)
+      .filter((row) => !!row.slug)
+      .map((row) => ({
+        id: row.id,
+        title: row.title ?? 'Inhalt',
+        excerpt: row.excerpt ?? '',
+        teaserImageUrl: null,
+        actionTarget: `/patient/content/${row.slug}`,
+        priority: row.priority ?? 0,
+      }))
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        tag: START_SLIDER_TAG,
+        items: fallbackItems,
+      },
+    })
+  }
+
   if (error) {
     console.error('[patient/content-slider] failed to load slider content', {
       errorCode: error.code,

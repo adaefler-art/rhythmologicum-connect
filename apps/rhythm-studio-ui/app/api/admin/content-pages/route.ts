@@ -69,7 +69,6 @@ export async function GET() {
 						layout,
 						category,
 						priority,
-						teaser_image_url,
 						funnel_id,
 						updated_at,
 						created_at,

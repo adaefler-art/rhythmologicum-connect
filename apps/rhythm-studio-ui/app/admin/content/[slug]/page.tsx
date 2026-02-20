@@ -83,7 +83,36 @@ async function fetchContentPageByKey(
     .eq(isUuid ? 'id' : 'slug', key)
     .maybeSingle()
 
-  if (exactMatchError) {
+  if (exactMatchError && exactMatchError.code === '42703') {
+    const fallbackSelect = `
+      id,
+      slug,
+      title,
+      excerpt,
+      body_markdown,
+      status,
+      layout,
+      category,
+      priority,
+      funnel_id,
+      flow_step,
+      order_index
+    `
+
+    const { data: fallbackMatch, error: fallbackError } = await supabase
+      .from('content_pages')
+      .select(fallbackSelect)
+      .eq(isUuid ? 'id' : 'slug', key)
+      .maybeSingle()
+
+    if (fallbackError) {
+      throw new Error('Fehler beim Laden der Content-Page')
+    }
+
+    if (fallbackMatch) {
+      return normalizeContentPage({ ...fallbackMatch, teaser_image_url: null })
+    }
+  } else if (exactMatchError) {
     throw new Error('Fehler beim Laden der Content-Page')
   }
 
@@ -101,7 +130,40 @@ async function fetchContentPageByKey(
     .ilike('slug', key)
     .limit(1)
 
-  if (slugMatchError) {
+  if (slugMatchError && slugMatchError.code === '42703') {
+    const fallbackSelect = `
+      id,
+      slug,
+      title,
+      excerpt,
+      body_markdown,
+      status,
+      layout,
+      category,
+      priority,
+      funnel_id,
+      flow_step,
+      order_index
+    `
+
+    const { data: fallbackSlugMatch, error: fallbackSlugError } = await supabase
+      .from('content_pages')
+      .select(fallbackSelect)
+      .ilike('slug', key)
+      .limit(1)
+
+    if (fallbackSlugError) {
+      throw new Error('Fehler beim Laden der Content-Page')
+    }
+
+    const fallbackRow =
+      Array.isArray(fallbackSlugMatch) && fallbackSlugMatch.length > 0 ? fallbackSlugMatch[0] : null
+    if (!fallbackRow) {
+      return null
+    }
+
+    return normalizeContentPage({ ...fallbackRow, teaser_image_url: null })
+  } else if (slugMatchError) {
     throw new Error('Fehler beim Laden der Content-Page')
   }
 

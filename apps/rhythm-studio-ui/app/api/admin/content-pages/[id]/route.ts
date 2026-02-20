@@ -98,7 +98,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 				funnel_id,
 				flow_step,
 				order_index,
-				teaser_image_url,
 				updated_at,
 				created_at
 			`
@@ -279,6 +278,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 			.eq('id', id)
 			.select()
 			.single()
+
+		if (updateError && updateError.code === '42703' && 'teaser_image_url' in updateData) {
+			delete updateData.teaser_image_url
+			const { data: fallbackUpdatedPage, error: fallbackUpdateError } = await adminClient
+				.from('content_pages')
+				.update(updateData)
+				.eq('id', id)
+				.select()
+				.single()
+
+			if (fallbackUpdateError) {
+				console.error('Error updating content page (fallback):', fallbackUpdateError)
+				return NextResponse.json({ error: 'Failed to update content page' }, { status: 500 })
+			}
+
+			return NextResponse.json({ contentPage: fallbackUpdatedPage })
+		}
 
 		if (updateError) {
 			console.error('Error updating content page:', updateError)
