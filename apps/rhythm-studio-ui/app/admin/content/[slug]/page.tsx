@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { cookies, headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import ContentPageEditor, { ContentPageEditorData } from '@/app/components/ContentPageEditor'
@@ -10,6 +11,36 @@ const UUID_REGEX =
 
 type PageProps = {
   params: Promise<{ slug: string }>
+}
+
+function normalizeContentPage(raw: {
+  id: string
+  title: string | null
+  slug: string | null
+  excerpt: string | null
+  body_markdown: string | null
+  status: string | null
+  category: string | null
+  priority: number | null
+  funnel_id: string | null
+  flow_step: string | null
+  order_index: number | null
+  layout: string | null
+}): ContentPageEditorData {
+  return {
+    id: raw.id,
+    title: raw.title ?? '',
+    slug: raw.slug ?? '',
+    excerpt: raw.excerpt ?? '',
+    body_markdown: raw.body_markdown ?? '',
+    status: raw.status === 'published' ? 'published' : 'draft',
+    category: raw.category ?? '',
+    priority: raw.priority ?? 0,
+    funnel_id: raw.funnel_id,
+    flow_step: raw.flow_step,
+    order_index: raw.order_index,
+    layout: raw.layout,
+  }
 }
 
 function toLookupCandidates(rawKey: string): string[] {
@@ -54,20 +85,7 @@ async function fetchContentPageByKey(
   }
 
   if (exactMatch) {
-    return {
-      id: exactMatch.id,
-      title: exactMatch.title ?? '',
-      slug: exactMatch.slug ?? '',
-      excerpt: exactMatch.excerpt ?? '',
-      body_markdown: exactMatch.body_markdown ?? '',
-      status: exactMatch.status === 'published' ? 'published' : 'draft',
-      category: exactMatch.category ?? '',
-      priority: exactMatch.priority ?? 0,
-      funnel_id: exactMatch.funnel_id,
-      flow_step: exactMatch.flow_step,
-      order_index: exactMatch.order_index,
-      layout: exactMatch.layout,
-    } satisfies ContentPageEditorData
+    return normalizeContentPage(exactMatch)
   }
 
   if (isUuid) {
@@ -89,20 +107,49 @@ async function fetchContentPageByKey(
     return null
   }
 
-  return {
-    id: row.id,
-    title: row.title ?? '',
-    slug: row.slug ?? '',
-    excerpt: row.excerpt ?? '',
-    body_markdown: row.body_markdown ?? '',
-    status: row.status === 'published' ? 'published' : 'draft',
-    category: row.category ?? '',
-    priority: row.priority ?? 0,
-    funnel_id: row.funnel_id,
-    flow_step: row.flow_step,
-    order_index: row.order_index,
-    layout: row.layout,
-  } satisfies ContentPageEditorData
+  return normalizeContentPage(row)
+}
+
+async function fetchContentPageByKeyViaApi(key: string): Promise<ContentPageEditorData | null> {
+  const headerList = await headers()
+  const host = headerList.get('host')
+  if (!host) return null
+
+  const protocol = host.includes('localhost') ? 'http' : 'https'
+  const cookieStore = await cookies()
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join('; ')
+
+  const response = await fetch(new URL(`/api/admin/content-pages/${key}`, `${protocol}://${host}`), {
+    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    return null
+  }
+
+  const payload = (await response.json()) as {
+    contentPage?: {
+      id: string
+      title: string | null
+      slug: string | null
+      excerpt: string | null
+      body_markdown: string | null
+      status: string | null
+      category: string | null
+      priority: number | null
+      funnel_id: string | null
+      flow_step: string | null
+      order_index: number | null
+      layout: string | null
+    } | null
+  }
+
+  if (!payload.contentPage) return null
+  return normalizeContentPage(payload.contentPage)
 }
 
 async function loadContentPage(
@@ -115,6 +162,11 @@ async function loadContentPage(
     const contentPage = await fetchContentPageByKey(supabase, candidate)
     if (contentPage) {
       return contentPage
+    }
+
+    const apiFallback = await fetchContentPageByKeyViaApi(candidate)
+    if (apiFallback) {
+      return apiFallback
     }
   }
 
