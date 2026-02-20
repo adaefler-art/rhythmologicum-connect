@@ -398,35 +398,27 @@ const buildFollowupPrompt = (params: {
 
   const reason = question.why?.trim()
   const cleanedQuestion = sanitizeFollowupQuestionText(question.question)
-  const blockLabelById: Record<string, string> = {
-    core_symptom_profile: 'Symptomprofil',
-    medical_context: 'medizinischen Kontext',
-    supporting_context: 'Begleitfaktoren',
-    program_specific: 'Programmschritt',
-  }
-
-  const activeBlockLabel = activeBlockId ? blockLabelById[activeBlockId] ?? null : null
 
   const lead = includeIntro
-    ? activeBlockLabel
-      ? `Wir setzen im Abschnitt ${activeBlockLabel} fort. Ich starte mit der wichtigsten offenen Frage.`
-      : activeObjectiveCount && activeObjectiveCount > 0
-        ? `Ich habe noch ${activeObjectiveCount} offene Anamnese-Punkte. Ich starte mit der wichtigsten Frage.`
-        : 'Ich habe eine kurze Frage zu Ihrer Anamnese.'
+    ? activeObjectiveCount && activeObjectiveCount > 0
+      ? `Wir machen dort weiter, wo wir aufgehoert haben. Ich habe noch ${activeObjectiveCount} kurze Rueckfragen, damit ich Ihre Angaben besser einordnen kann.`
+      : activeBlockId
+        ? 'Wir machen dort weiter, wo wir aufgehoert haben. Ich habe dazu eine kurze Rueckfrage.'
+        : 'Ich habe eine kurze Rueckfrage, damit ich Ihre Angaben besser einordnen kann.'
     : null
 
   const shortChiefComplaint = chiefComplaint && chiefComplaint.length <= 90 ? chiefComplaint : null
-  const isStandardGapQuestion = question.source === 'gap_rule' && /^gap:/.test(question.id)
-  const contextPrefix = shortChiefComplaint
-    ? `Zum Thema "${shortChiefComplaint}": `
-    : 'Kurze Frage: '
+  const narrativeTopic = latestIntake ? extractTopic(getIntakeNarrative(latestIntake.content) ?? '') : null
+  const symptomContext = shortChiefComplaint ?? narrativeTopic
+  const contextPrefix = symptomContext
+    ? `Zu "${symptomContext}": `
+    : 'Zu Ihren bisher geschilderten Beschwerden: '
 
   const directQuestion = toPatientFriendlyFollowupQuestion(cleanedQuestion || question.question)
 
-  const politeQuestion =
-    isStandardGapQuestion || questionAlreadyContainsContext(directQuestion)
-      ? directQuestion
-      : `${contextPrefix}${directQuestion}`
+  const politeQuestion = questionAlreadyContainsContext(directQuestion)
+    ? directQuestion
+    : `${contextPrefix}${directQuestion}`
 
   const technicalReason =
     reason &&
