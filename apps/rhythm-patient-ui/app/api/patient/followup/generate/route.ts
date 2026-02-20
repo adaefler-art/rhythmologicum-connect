@@ -832,6 +832,15 @@ export async function POST(req: Request) {
       askedQuestionIds.length > 0 &&
       (answerClassification === 'answered' || answerClassification === 'partial')
 
+    const isResumeRequest = askedQuestionIds.length === 0
+
+    if (isResumeRequest) {
+      structuredData = transitionFollowupLifecycle({
+        structuredData,
+        action: 'resume',
+      })
+    }
+
     if (shouldAdvanceAnsweredQuestion) {
       structuredData = appendAskedQuestionIds({
         structuredData,

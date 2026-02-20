@@ -547,6 +547,55 @@ describe('followup generator', () => {
     expect(generated.readiness?.state).toBe('VisitReady')
   })
 
+  it('does not re-ask completed block questions on resume when stale clinician prompts exist', () => {
+    const resumed = transitionFollowupLifecycle({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Schwindel',
+        history_of_present_illness: {
+          onset: 'seit gestern',
+          duration: '30 Minuten',
+          course: 'unveraendert',
+          trigger: 'Lagerungswechsel',
+          frequency: 'mehrmals taeglich',
+        },
+        followup: {
+          next_questions: [
+            {
+              id: 'clinician-request:bitte-beginn-klaeren',
+              question: 'Bitte den Beginn nochmal genauer klaeren?',
+              why: 'Rueckfrage aus aerztlicher Pruefung',
+              priority: 1,
+              source: 'clinician_request',
+            },
+          ],
+          queue: [],
+          asked_question_ids: [],
+          last_generated_at: '2026-02-20T00:00:00.000Z',
+        },
+      },
+      action: 'resume',
+      now: new Date('2026-02-20T10:00:00.000Z'),
+    })
+
+    const generated = generateFollowupQuestions({
+      structuredData: resumed,
+      now: new Date('2026-02-20T10:01:00.000Z'),
+    })
+
+    expect(generated.lifecycle?.active_block_id).toBe('medical_context')
+    expect(
+      generated.next_questions.some((entry) =>
+        entry.question.toLowerCase().includes('beginn') || entry.id.includes('beginn'),
+      ),
+    ).toBe(false)
+    expect(
+      generated.next_questions.some(
+        (entry) => entry.objective_id === 'objective:medication' || entry.id.includes('medication'),
+      ),
+    ).toBe(true)
+  })
+
   it('transitions lifecycle via skip and complete without repeating asked questions', () => {
     const structuredData = {
       status: 'draft' as const,

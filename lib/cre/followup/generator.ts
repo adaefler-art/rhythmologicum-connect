@@ -591,6 +591,34 @@ const inferObjectiveIdFromText = (value: string): string | null => {
   return null
 }
 
+const resolveCandidateObjectiveId = (candidate: FollowupCandidate): string | null => {
+  if (candidate.objective_id) return candidate.objective_id
+
+  const inferredFromQuestion = inferObjectiveIdFromText(candidate.question)
+  if (inferredFromQuestion) return inferredFromQuestion
+
+  return inferObjectiveIdFromText(candidate.why)
+}
+
+const filterCandidatesForActiveBlock = (params: {
+  candidates: FollowupCandidate[]
+  activeBlockId: string | null
+}) => {
+  if (!params.activeBlockId) {
+    return params.candidates
+  }
+
+  return params.candidates.filter((candidate) => {
+    const resolvedObjectiveId = resolveCandidateObjectiveId(candidate)
+    if (!resolvedObjectiveId) return true
+
+    const blockId = OBJECTIVE_BLOCK_BY_ID[resolvedObjectiveId]
+    if (!blockId) return true
+
+    return blockId === params.activeBlockId
+  })
+}
+
 const deriveObjectiveStatus = (params: {
   slot: ObjectiveSlotDefinition
   structuredData: StructuredIntakeData
@@ -787,6 +815,13 @@ export const mergeClinicianRequestedItemsIntoFollowup = (params: {
       if (!candidate.objective_id) return true
       return objectiveSnapshot.activeObjectiveIds.includes(candidate.objective_id)
     })
+
+  const blockScopedMerged = filterCandidatesForActiveBlock({
+    candidates: merged,
+    activeBlockId: savepointSnapshot.active_block_id,
+  })
+
+  const sortedMerged = blockScopedMerged
     .sort((a, b) => {
       if (a.priority !== b.priority) return a.priority - b.priority
       if (a.source !== b.source) return SOURCE_PRIORITY[a.source] - SOURCE_PRIORITY[b.source]
@@ -796,8 +831,8 @@ export const mergeClinicianRequestedItemsIntoFollowup = (params: {
   return {
     ...params.structuredData,
     followup: {
-      next_questions: merged.slice(0, MAX_NEXT_QUESTIONS),
-      queue: merged.slice(MAX_NEXT_QUESTIONS),
+      next_questions: sortedMerged.slice(0, MAX_NEXT_QUESTIONS),
+      queue: sortedMerged.slice(MAX_NEXT_QUESTIONS),
       asked_question_ids: Array.from(askedIds),
       last_generated_at: now.toISOString(),
       objectives: objectiveSnapshot.objectives,
@@ -923,6 +958,19 @@ export const generateFollowupQuestions = (params: {
       if (!candidate.objective_id) return true
       return objectiveSnapshot.activeObjectiveIds.includes(candidate.objective_id)
     })
+
+  const savepointSnapshot = buildLifecycleSavepoints({
+    objectives: objectiveSnapshot.objectives,
+    now,
+    previousSavepoints: lifecycle.savepoints,
+  })
+
+  const blockScopedCandidates = filterCandidatesForActiveBlock({
+    candidates: allCandidates,
+    activeBlockId: savepointSnapshot.active_block_id,
+  })
+
+  const sortedCandidates = blockScopedCandidates
     .sort((a, b) => {
       if (a.priority !== b.priority) return a.priority - b.priority
       if (a.source !== b.source) return SOURCE_PRIORITY[a.source] - SOURCE_PRIORITY[b.source]
@@ -930,17 +978,11 @@ export const generateFollowupQuestions = (params: {
     })
 
   const lifecycleState: 'active' | 'needs_review' | 'completed' =
-    allCandidates.length === 0
+    sortedCandidates.length === 0
       ? readinessBase.uc2_triggered
         ? 'needs_review'
         : 'completed'
       : 'active'
-
-  const savepointSnapshot = buildLifecycleSavepoints({
-    objectives: objectiveSnapshot.objectives,
-    now,
-    previousSavepoints: lifecycle.savepoints,
-  })
 
   const readiness = finalizeReadinessSnapshot({
     readiness: readinessBase,
@@ -949,8 +991,8 @@ export const generateFollowupQuestions = (params: {
   })
 
   return {
-    next_questions: allCandidates.slice(0, MAX_NEXT_QUESTIONS),
-    queue: allCandidates.slice(MAX_NEXT_QUESTIONS),
+    next_questions: sortedCandidates.slice(0, MAX_NEXT_QUESTIONS),
+    queue: sortedCandidates.slice(MAX_NEXT_QUESTIONS),
     asked_question_ids: Array.from(askedIds),
     last_generated_at: now.toISOString(),
     objectives: objectiveSnapshot.objectives,
@@ -961,7 +1003,7 @@ export const generateFollowupQuestions = (params: {
       ...lifecycle,
       state: lifecycleState,
       completed_at:
-        allCandidates.length === 0 && !readinessBase.uc2_triggered
+        sortedCandidates.length === 0 && !readinessBase.uc2_triggered
           ? now.toISOString()
           : lifecycle.completed_at,
       savepoints: savepointSnapshot.savepoints,
