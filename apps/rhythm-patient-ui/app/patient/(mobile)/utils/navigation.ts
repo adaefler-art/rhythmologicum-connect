@@ -33,6 +33,9 @@ export const CANONICAL_ROUTES = {
   
   /** Dialog/chat with AI assistant */
   DIALOG: '/patient/dialog',
+
+  /** Process status and open todos */
+  STATUS: '/patient/status',
   
   /** User profile and settings */
   PROFILE: '/patient/profile',
@@ -198,6 +201,11 @@ export function getNearestCanonicalRoute(path: string): string {
   // Dialog routes
   if (pathWithoutQuery.startsWith('/patient/dialog')) {
     return CANONICAL_ROUTES.DIALOG
+  }
+
+  // Status routes
+  if (pathWithoutQuery.startsWith('/patient/status')) {
+    return CANONICAL_ROUTES.STATUS
   }
   
   // Profile routes

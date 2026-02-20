@@ -164,6 +164,18 @@ export default function DashboardClient({
           {/* New Greeting + AI Assistant Card */}
           <DashboardHero greetingName={greetingName} onChat={handleAmyChat} />
 
+          <Card padding="md" className="rounded-lg">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Prozessstatus & ToDos</h3>
+                <p className="text-sm text-slate-600">Strukturierte Übersicht und Korrektur via Chat</p>
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => router.push('/patient/status')}>
+                Öffnen
+              </Button>
+            </div>
+          </Card>
+
           {/* E6.5.9: Loading state - show spinner only on initial load */}
           {state === 'loading' && !dashboardData && (
             <div className="py-12">

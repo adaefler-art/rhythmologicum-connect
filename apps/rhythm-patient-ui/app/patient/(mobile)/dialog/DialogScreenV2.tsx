@@ -589,6 +589,7 @@ export function DialogScreenV2() {
   const searchParams = useSearchParams()
   const context = searchParams.get('context')
   const assessmentId = searchParams.get('assessmentId')
+  const prefill = searchParams.get('prefill')
   const devtoolsEnabled = searchParams.has('devtools')
   const isDevPreviewHost =
     env.NODE_ENV !== 'production' ||
@@ -655,6 +656,13 @@ export function DialogScreenV2() {
   useEffect(() => {
     setIsHydrated(true)
   }, [])
+
+  useEffect(() => {
+    const sanitizedPrefill = prefill?.trim()
+    if (!sanitizedPrefill) return
+
+    setInput((previous) => (previous.trim().length > 0 ? previous : sanitizedPrefill))
+  }, [prefill])
 
   const appendAssistantMessage = (text: string) => {
     const normalizedText = normalizeAssistantTextForPatient(text)

@@ -35,10 +35,17 @@ export const PATIENT_MOBILE_MENU_ITEMS: PatientMobileMenuItem[] = [
     enabled: true,
   },
   {
+    id: 'status',
+    label: 'Status & ToDos',
+    href: CANONICAL_ROUTES.STATUS,
+    order: 2,
+    enabled: true,
+  },
+  {
     id: 'profile',
     label: 'Mein Profil',
     href: CANONICAL_ROUTES.PROFILE,
-    order: 2,
+    order: 3,
     enabled: true,
   },
 ]

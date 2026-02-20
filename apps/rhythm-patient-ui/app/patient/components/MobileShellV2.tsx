@@ -56,6 +56,7 @@ function getPageTitle(pathname: string): string {
   if (pathname?.startsWith('/patient/dashboard')) return 'Dashboard'
   if (pathname?.startsWith('/patient/assess')) return 'Assessment'
   if (pathname?.startsWith('/patient/dialog')) return 'Dialog'
+  if (pathname?.startsWith('/patient/status')) return 'Status'
   if (pathname?.startsWith('/patient/profile')) return 'Profil'
   if (pathname?.includes('/result')) return 'Ergebnisse'
   if (pathname?.includes('/funnel/')) return 'Fragebogen'
