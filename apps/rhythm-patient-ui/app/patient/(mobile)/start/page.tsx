@@ -175,7 +175,10 @@ export default function PatientEntryScreen() {
                   fullWidth
                   icon={<ChevronRight className="h-4 w-4" />}
                   iconPosition="right"
-                  onClick={() => router.push(activeContentTile.actionTarget)}
+                  onClick={() => {
+                    if (!activeContentTile.actionTarget) return
+                    router.push(activeContentTile.actionTarget)
+                  }}
                 >
                   Inhalt oeffnen
                 </Button>
