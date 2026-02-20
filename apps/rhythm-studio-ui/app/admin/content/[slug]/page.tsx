@@ -13,7 +13,17 @@ type PageProps = {
   params: Promise<{ slug: string }>
 }
 
-async function loadContentPage(key: string) {
+function toLookupCandidates(rawKey: string): string[] {
+  const decodedKey = decodeURIComponent(rawKey)
+  const cleanedCandidates = [rawKey, decodedKey]
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+
+  const uniqueCandidates = Array.from(new Set(cleanedCandidates))
+  return uniqueCandidates
+}
+
+async function fetchContentPageByKey(key: string) {
   const headerList = await headers()
   const host = headerList.get('host')
   const protocol = host?.includes('localhost') ? 'http' : 'https'
@@ -45,6 +55,19 @@ async function loadContentPage(key: string) {
 
   const data = (await response.json()) as { contentPage?: ContentPageEditorData | null }
   return data.contentPage ?? null
+}
+
+async function loadContentPage(rawKey: string) {
+  const lookupCandidates = toLookupCandidates(rawKey)
+
+  for (const candidate of lookupCandidates) {
+    const contentPage = await fetchContentPageByKey(candidate)
+    if (contentPage) {
+      return contentPage
+    }
+  }
+
+  return null
 }
 
 export default async function EditContentPage({ params }: PageProps) {
