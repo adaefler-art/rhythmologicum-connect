@@ -156,6 +156,15 @@ export type ClinicalIntakeExportPayload = {
       source: string | null
     }>
     asked_question_ids: string[]
+    program_readiness: {
+      is_program_ready: boolean
+      readiness_state: string | null
+      lifecycle_state: string | null
+      active_block_id: string | null
+      open_block_ids: string[]
+      completed_block_ids: string[]
+      generated_at: string | null
+    }
     lifecycle: {
       state: string | null
       completed_question_ids: string[]
@@ -361,6 +370,12 @@ export const buildClinicalIntakeExportPayload = (params: {
     followup.lifecycle && typeof followup.lifecycle === 'object' && !Array.isArray(followup.lifecycle)
       ? (followup.lifecycle as Record<string, unknown>)
       : {}
+  const followupProgramReadiness =
+    followup.program_readiness &&
+    typeof followup.program_readiness === 'object' &&
+    !Array.isArray(followup.program_readiness)
+      ? (followup.program_readiness as Record<string, unknown>)
+      : {}
   const languageNormalization =
     structuredData.language_normalization &&
     typeof structuredData.language_normalization === 'object' &&
@@ -492,6 +507,15 @@ export const buildClinicalIntakeExportPayload = (params: {
         source: getText(entry.source) || null,
       })),
       asked_question_ids: getStringArray(followup.asked_question_ids),
+      program_readiness: {
+        is_program_ready: getBoolean(followupProgramReadiness.is_program_ready),
+        readiness_state: getText(followupProgramReadiness.readiness_state) || null,
+        lifecycle_state: getText(followupProgramReadiness.lifecycle_state) || null,
+        active_block_id: getText(followupProgramReadiness.active_block_id) || null,
+        open_block_ids: getStringArray(followupProgramReadiness.open_block_ids),
+        completed_block_ids: getStringArray(followupProgramReadiness.completed_block_ids),
+        generated_at: getText(followupProgramReadiness.generated_at) || null,
+      },
       lifecycle: {
         state: getText(followupLifecycle.state) || null,
         completed_question_ids: getStringArray(followupLifecycle.completed_question_ids),

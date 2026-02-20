@@ -47,6 +47,8 @@ const mapIntake = (intake: IntakeRecord | null) =>
         visit_preparation: buildVisitPreparationSummary(
           toStructuredIntakeData(intake.structured_data),
         ),
+        program_readiness:
+          toStructuredIntakeData(intake.structured_data).followup?.program_readiness ?? null,
         trigger_reason: intake.trigger_reason,
         review_state: null as IntakeReviewState | null,
         created_at: intake.created_at,

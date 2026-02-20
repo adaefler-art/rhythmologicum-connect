@@ -212,6 +212,16 @@ export interface ClinicalReadinessSnapshot {
   uc2_trigger_reasons: ClinicalUc2TriggerReason[]
 }
 
+export interface ClinicalProgramReadinessArtifact {
+  is_program_ready: boolean
+  readiness_state: ClinicalReadinessState
+  lifecycle_state: 'active' | 'needs_review' | 'completed'
+  active_block_id: string | null
+  open_block_ids: string[]
+  completed_block_ids: string[]
+  generated_at: string
+}
+
 export interface ClinicalFollowup {
   next_questions: ClinicalFollowupQuestion[]
   queue?: ClinicalFollowupQuestion[]
@@ -221,6 +231,7 @@ export interface ClinicalFollowup {
   active_objective_ids?: string[]
   objective_state_overrides?: Record<string, 'missing' | 'unclear' | 'resolved'>
   readiness?: ClinicalReadinessSnapshot
+  program_readiness?: ClinicalProgramReadinessArtifact
   lifecycle?: {
     state: 'active' | 'needs_review' | 'completed'
     completed_question_ids: string[]

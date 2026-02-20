@@ -61,6 +61,22 @@ type IntakeResponse = {
   created_at: string
   updated_at: string
   case_checklist?: CaseChecklistSnapshot
+  program_readiness?: Record<string, unknown> | null
+}
+
+const extractProgramReadiness = (structuredData: Record<string, unknown>) => {
+  const followup = structuredData.followup
+  if (!followup || typeof followup !== 'object' || Array.isArray(followup)) {
+    return null
+  }
+
+  const followupRecord = followup as Record<string, unknown>
+  const programReadiness = followupRecord.program_readiness
+  if (!programReadiness || typeof programReadiness !== 'object' || Array.isArray(programReadiness)) {
+    return null
+  }
+
+  return programReadiness as Record<string, unknown>
 }
 
 const buildCaseChecklistSnapshot = (
@@ -355,6 +371,7 @@ export async function GET(_request: Request, context: RouteContext) {
           safety,
         },
         case_checklist: buildCaseChecklistSnapshot(intakeRecord.structured_data),
+        program_readiness: extractProgramReadiness(intakeRecord.structured_data),
         policy_override: intakeRecord.policy_override ?? null,
       }
     }

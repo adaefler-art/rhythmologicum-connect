@@ -60,6 +60,26 @@ export const clinicalFollowupSchema = z.object({
       ),
     })
     .optional(),
+  program_readiness: z
+    .object({
+      is_program_ready: z.boolean(),
+      readiness_state: z.union([
+        z.literal('SafetyReady'),
+        z.literal('VisitReady'),
+        z.literal('ProblemReady'),
+        z.literal('ProgramReady'),
+      ]),
+      lifecycle_state: z.union([
+        z.literal('active'),
+        z.literal('needs_review'),
+        z.literal('completed'),
+      ]),
+      active_block_id: z.string().nullable(),
+      open_block_ids: z.array(z.string().min(1)),
+      completed_block_ids: z.array(z.string().min(1)),
+      generated_at: z.string().min(1),
+    })
+    .optional(),
   lifecycle: z
     .object({
       state: z.union([z.literal('active'), z.literal('needs_review'), z.literal('completed')]),

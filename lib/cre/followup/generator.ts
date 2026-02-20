@@ -1,4 +1,5 @@
 import type {
+  ClinicalProgramReadinessArtifact,
   ClinicalReadinessSnapshot,
   ClinicalUc2TriggerReason,
   ClinicalFollowup,
@@ -552,6 +553,31 @@ const finalizeReadinessSnapshot = (params: {
   return params.readiness
 }
 
+const buildProgramReadinessArtifact = (params: {
+  readiness: ClinicalReadinessSnapshot
+  lifecycleState: 'active' | 'needs_review' | 'completed'
+  savepoints: Array<{ block_id: string; status: 'in_progress' | 'completed' }>
+  generatedAt: Date
+}): ClinicalProgramReadinessArtifact => {
+  const openBlockIds = params.savepoints
+    .filter((entry) => entry.status === 'in_progress')
+    .map((entry) => entry.block_id)
+
+  const completedBlockIds = params.savepoints
+    .filter((entry) => entry.status === 'completed')
+    .map((entry) => entry.block_id)
+
+  return {
+    is_program_ready: params.readiness.state === 'ProgramReady',
+    readiness_state: params.readiness.state,
+    lifecycle_state: params.lifecycleState,
+    active_block_id: openBlockIds[0] ?? null,
+    open_block_ids: openBlockIds,
+    completed_block_ids: completedBlockIds,
+    generated_at: params.generatedAt.toISOString(),
+  }
+}
+
 const getActiveObjectiveSlots = (structuredData: StructuredIntakeData) => {
   const uc2Active = evaluateUc2TriggerReasons(structuredData).length > 0
   return OBJECTIVE_SLOTS.filter((slot) => !slot.requiresUc2 || uc2Active)
@@ -796,6 +822,12 @@ export const mergeClinicianRequestedItemsIntoFollowup = (params: {
     lifecycleState,
     savepoints: savepointSnapshot.savepoints,
   })
+  const programReadiness = buildProgramReadinessArtifact({
+    readiness,
+    lifecycleState,
+    savepoints: savepointSnapshot.savepoints,
+    generatedAt: now,
+  })
   const askedIds = new Set([
     ...(existingFollowup?.asked_question_ids ?? []),
     ...lifecycle.completed_question_ids,
@@ -839,6 +871,7 @@ export const mergeClinicianRequestedItemsIntoFollowup = (params: {
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
       objective_state_overrides: getObjectiveStateOverrides(params.structuredData),
       readiness,
+      program_readiness: programReadiness,
       lifecycle: {
         ...lifecycle,
         state: lifecycleState,
@@ -875,6 +908,12 @@ export const generateFollowupQuestions = (params: {
       lifecycleState: 'completed',
       savepoints: savepointSnapshot.savepoints,
     })
+    const programReadiness = buildProgramReadinessArtifact({
+      readiness,
+      lifecycleState: 'completed',
+      savepoints: savepointSnapshot.savepoints,
+      generatedAt: now,
+    })
 
     return {
       next_questions: [],
@@ -891,6 +930,7 @@ export const generateFollowupQuestions = (params: {
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
       objective_state_overrides: getObjectiveStateOverrides(structuredData),
       readiness,
+      program_readiness: programReadiness,
       lifecycle: {
         ...lifecycle,
         savepoints: savepointSnapshot.savepoints,
@@ -910,6 +950,12 @@ export const generateFollowupQuestions = (params: {
       lifecycleState: 'active',
       savepoints: savepointSnapshot.savepoints,
     })
+    const programReadiness = buildProgramReadinessArtifact({
+      readiness,
+      lifecycleState: 'active',
+      savepoints: savepointSnapshot.savepoints,
+      generatedAt: now,
+    })
 
     return {
       next_questions: [],
@@ -926,6 +972,7 @@ export const generateFollowupQuestions = (params: {
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
       objective_state_overrides: getObjectiveStateOverrides(structuredData),
       readiness,
+      program_readiness: programReadiness,
       lifecycle: {
         ...lifecycle,
         state: 'active',
@@ -989,6 +1036,12 @@ export const generateFollowupQuestions = (params: {
     lifecycleState,
     savepoints: savepointSnapshot.savepoints,
   })
+  const programReadiness = buildProgramReadinessArtifact({
+    readiness,
+    lifecycleState,
+    savepoints: savepointSnapshot.savepoints,
+    generatedAt: now,
+  })
 
   return {
     next_questions: sortedCandidates.slice(0, MAX_NEXT_QUESTIONS),
@@ -999,6 +1052,7 @@ export const generateFollowupQuestions = (params: {
     active_objective_ids: objectiveSnapshot.activeObjectiveIds,
     objective_state_overrides: getObjectiveStateOverrides(structuredData),
     readiness,
+    program_readiness: programReadiness,
     lifecycle: {
       ...lifecycle,
       state: lifecycleState,
@@ -1035,6 +1089,12 @@ export const appendAskedQuestionIds = (params: {
     lifecycleState,
     savepoints: savepointSnapshot.savepoints,
   })
+  const programReadiness = buildProgramReadinessArtifact({
+    readiness,
+    lifecycleState,
+    savepoints: savepointSnapshot.savepoints,
+    generatedAt: now,
+  })
 
   for (const id of params.askedQuestionIds) {
     if (typeof id === 'string' && id.trim()) {
@@ -1053,6 +1113,7 @@ export const appendAskedQuestionIds = (params: {
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
       objective_state_overrides: getObjectiveStateOverrides(params.structuredData),
       readiness,
+      program_readiness: programReadiness,
       lifecycle: {
         ...lifecycle,
         savepoints: savepointSnapshot.savepoints,
@@ -1125,6 +1186,12 @@ export const transitionFollowupLifecycle = (params: {
     lifecycleState: nextState,
     savepoints: savepointSnapshot.savepoints,
   })
+  const programReadiness = buildProgramReadinessArtifact({
+    readiness,
+    lifecycleState: nextState,
+    savepoints: savepointSnapshot.savepoints,
+    generatedAt: now,
+  })
 
   return {
     ...params.structuredData,
@@ -1137,6 +1204,7 @@ export const transitionFollowupLifecycle = (params: {
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
       objective_state_overrides: getObjectiveStateOverrides(params.structuredData),
       readiness,
+      program_readiness: programReadiness,
       lifecycle: {
         state: nextState,
         completed_question_ids: Array.from(completedIds),

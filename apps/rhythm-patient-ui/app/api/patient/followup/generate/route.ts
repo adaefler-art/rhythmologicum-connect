@@ -858,13 +858,7 @@ export async function POST(req: Request) {
 
     const blocked = isFollowupBlockedBySafety(structuredData)
 
-    const followup = blocked
-      ? {
-          next_questions: [],
-          asked_question_ids: structuredData.followup?.asked_question_ids ?? [],
-          last_generated_at: new Date().toISOString(),
-        }
-      : generateFollowupQuestions({ structuredData })
+    const followup = generateFollowupQuestions({ structuredData })
 
     const followupValidation = validateClinicalFollowup(followup)
 
@@ -1061,6 +1055,7 @@ export async function POST(req: Request) {
       data: {
         intake_id: intakeRecord.id,
         followup: followupWithClarification,
+        program_readiness: followupWithClarification.program_readiness ?? null,
         next_questions: followupWithClarification.next_questions,
         blocked,
         language_normalization: normalizationResult.turn,

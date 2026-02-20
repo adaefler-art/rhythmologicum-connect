@@ -517,6 +517,9 @@ describe('followup generator', () => {
 
     expect(generated.lifecycle?.state).toBe('completed')
     expect(generated.readiness?.state).toBe('ProgramReady')
+    expect(generated.program_readiness?.is_program_ready).toBe(true)
+    expect(generated.program_readiness?.readiness_state).toBe('ProgramReady')
+    expect(generated.program_readiness?.open_block_ids).toEqual([])
     expect(generated.lifecycle?.active_block_id).toBeNull()
     expect((generated.lifecycle?.savepoints ?? []).every((entry) => entry.status === 'completed')).toBe(
       true,
@@ -545,6 +548,9 @@ describe('followup generator', () => {
     expect(coreSavepoint?.status).toBe('in_progress')
     expect(generated.lifecycle?.active_block_id).toBe('core_symptom_profile')
     expect(generated.readiness?.state).toBe('VisitReady')
+    expect(generated.program_readiness?.is_program_ready).toBe(false)
+    expect(generated.program_readiness?.active_block_id).toBe('core_symptom_profile')
+    expect(generated.program_readiness?.open_block_ids).toContain('core_symptom_profile')
   })
 
   it('does not re-ask completed block questions on resume when stale clinician prompts exist', () => {
