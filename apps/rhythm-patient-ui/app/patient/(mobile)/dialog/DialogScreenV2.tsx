@@ -105,6 +105,10 @@ type FollowupObjectiveSnapshot = {
   status: string
 }
 
+type ProgramReadinessSnapshot = {
+  active_block_id: string | null
+}
+
 type SpeechRecognitionInstance = {
   lang: string
   interimResults: boolean
@@ -368,8 +372,15 @@ const buildFollowupPrompt = (params: {
   latestIntake: IntakeEntry | null
   includeIntro?: boolean
   activeObjectiveCount?: number | null
+  activeBlockId?: string | null
 }) => {
-  const { question, latestIntake, includeIntro = false, activeObjectiveCount = null } = params
+  const {
+    question,
+    latestIntake,
+    includeIntro = false,
+    activeObjectiveCount = null,
+    activeBlockId = null,
+  } = params
   const structured = latestIntake ? getStructuredDataFromContent(latestIntake.content) : null
   const chiefComplaint =
     structured && typeof structured.chief_complaint === 'string' && structured.chief_complaint.trim()
@@ -378,10 +389,21 @@ const buildFollowupPrompt = (params: {
 
   const reason = question.why?.trim()
   const cleanedQuestion = sanitizeFollowupQuestionText(question.question)
+  const blockLabelById: Record<string, string> = {
+    core_symptom_profile: 'Symptomprofil',
+    medical_context: 'medizinischen Kontext',
+    supporting_context: 'Begleitfaktoren',
+    program_specific: 'Programmschritt',
+  }
+
+  const activeBlockLabel = activeBlockId ? blockLabelById[activeBlockId] ?? null : null
+
   const lead = includeIntro
-    ? activeObjectiveCount && activeObjectiveCount > 0
-      ? `Ich habe noch ${activeObjectiveCount} offene Anamnese-Punkte. Ich starte mit der wichtigsten Frage.`
-      : 'Ich habe eine kurze Frage zu Ihrer Anamnese.'
+    ? activeBlockLabel
+      ? `Wir setzen im Abschnitt ${activeBlockLabel} fort. Ich starte mit der wichtigsten offenen Frage.`
+      : activeObjectiveCount && activeObjectiveCount > 0
+        ? `Ich habe noch ${activeObjectiveCount} offene Anamnese-Punkte. Ich starte mit der wichtigsten Frage.`
+        : 'Ich habe eine kurze Frage zu Ihrer Anamnese.'
     : null
 
   const shortChiefComplaint = chiefComplaint && chiefComplaint.length <= 90 ? chiefComplaint : null
@@ -458,6 +480,10 @@ const getFollowupFromContent = (content: Record<string, unknown>) => {
   const record = followup as Record<string, unknown>
   const nextQuestionsRaw = Array.isArray(record.next_questions) ? record.next_questions : []
   const objectivesRaw = Array.isArray(record.objectives) ? record.objectives : []
+  const programReadinessRaw =
+    record.program_readiness && typeof record.program_readiness === 'object' && !Array.isArray(record.program_readiness)
+      ? (record.program_readiness as Record<string, unknown>)
+      : null
   const activeObjectiveIds = Array.isArray(record.active_objective_ids)
     ? record.active_objective_ids.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
     : []
@@ -499,6 +525,12 @@ const getFollowupFromContent = (content: Record<string, unknown>) => {
     next_questions: nextQuestions,
     active_objective_count: activeObjectiveIds.length,
     objectives,
+    program_readiness: {
+      active_block_id:
+        programReadinessRaw && typeof programReadinessRaw.active_block_id === 'string'
+          ? programReadinessRaw.active_block_id
+          : null,
+    } as ProgramReadinessSnapshot,
   }
 }
 
@@ -715,6 +747,12 @@ export function DialogScreenV2() {
       activeObjectiveCount: Array.isArray(payload?.data?.followup?.active_objective_ids)
         ? payload.data.followup.active_objective_ids.length
         : null,
+      activeBlockId:
+        typeof payload?.data?.program_readiness?.active_block_id === 'string'
+          ? payload.data.program_readiness.active_block_id
+          : typeof payload?.data?.followup?.program_readiness?.active_block_id === 'string'
+            ? payload.data.followup.program_readiness.active_block_id
+            : null,
     }
   }
 
@@ -813,6 +851,7 @@ export function DialogScreenV2() {
                 latestIntake,
                 includeIntro: true,
                 activeObjectiveCount: intakeFollowup.active_objective_count ?? null,
+                activeBlockId: intakeFollowup.program_readiness?.active_block_id ?? null,
               }),
             ),
             timestamp: buildTimestamp(),
@@ -836,6 +875,7 @@ export function DialogScreenV2() {
                     latestIntake,
                     includeIntro: true,
                     activeObjectiveCount: generatedFollowup.activeObjectiveCount,
+                    activeBlockId: generatedFollowup.activeBlockId,
                   }),
                 ),
                 timestamp: buildTimestamp(),
@@ -1591,6 +1631,7 @@ export function DialogScreenV2() {
                   question: nextQuestion,
                   latestIntake: null,
                   activeObjectiveCount: followupResult.activeObjectiveCount,
+                  activeBlockId: followupResult.activeBlockId,
                 }),
               )
               followupReplySent = true
@@ -1638,6 +1679,7 @@ export function DialogScreenV2() {
                     question: nextQuestion,
                     latestIntake: null,
                     activeObjectiveCount: recoveryFollowup.activeObjectiveCount,
+                    activeBlockId: recoveryFollowup.activeBlockId,
                   }),
                 )
                 recoveryReplySent = true
