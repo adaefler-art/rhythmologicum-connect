@@ -22,6 +22,25 @@ type FollowupObjective = {
   status: ObjectiveStatus
 }
 
+type CorrectionType =
+  | 'medication_missing'
+  | 'medication_incorrect'
+  | 'history_missing'
+  | 'symptom_timeline'
+  | 'free_text'
+
+type CorrectionSourceContext = 'status_page' | 'chat' | 'followup'
+
+type CorrectionJournalEntry = {
+  id: string
+  created_at: string
+  type: CorrectionType
+  source_context: CorrectionSourceContext
+  message_excerpt?: string
+  answer_classification?: string
+  asked_question_id?: string
+}
+
 type IntakeRecord = {
   id: string
   version_number: number
@@ -39,6 +58,7 @@ type IntakeRecord = {
     followup?: {
       objectives?: FollowupObjective[]
       next_questions?: unknown[]
+      correction_journal?: CorrectionJournalEntry[]
     }
   }
 }
@@ -97,6 +117,20 @@ const toBlockLabel = (blockId?: string | null) => {
 
 const isOpenObjectiveStatus = (status: ObjectiveStatus) =>
   status === 'missing' || status === 'unclear' || status === 'blocked_by_safety'
+
+const toCorrectionTypeLabel = (type?: CorrectionType) => {
+  if (type === 'medication_missing') return 'Medikation ergänzt'
+  if (type === 'medication_incorrect') return 'Medikation korrigiert'
+  if (type === 'history_missing') return 'Vorerkrankung ergänzt'
+  if (type === 'symptom_timeline') return 'Beschwerdeverlauf korrigiert'
+  return 'Freitext-Korrektur'
+}
+
+const toCorrectionSourceLabel = (value?: CorrectionSourceContext) => {
+  if (value === 'status_page') return 'aus Statusseite'
+  if (value === 'followup') return 'aus Follow-up'
+  return 'aus Chat'
+}
 
 export default function PatientStatusClient() {
   const router = useRouter()
@@ -176,6 +210,20 @@ export default function PatientStatusClient() {
 
   const totalOpenTodos = openObjectiveTodos.length + reviewTodos.length + nextQuestionCount
 
+  const latestCorrection = useMemo(() => {
+    const raw = intake?.structured_data?.followup?.correction_journal
+    if (!Array.isArray(raw) || raw.length === 0) return null
+
+    const sorted = [...raw].sort((left, right) => {
+      const leftTime = Date.parse(left.created_at ?? '')
+      const rightTime = Date.parse(right.created_at ?? '')
+      if (Number.isNaN(leftTime) || Number.isNaN(rightTime)) return 0
+      return rightTime - leftTime
+    })
+
+    return sorted[0] ?? null
+  }, [intake])
+
   if (loading) {
     return (
       <div className="flex w-full flex-col gap-6 px-4 py-10">
@@ -196,6 +244,37 @@ export default function PatientStatusClient() {
           Zurück zum Dashboard
         </button>
         <ErrorState title="Fehler beim Laden" message={error} onRetry={() => window.location.reload()} />
+      </div>
+    )
+  }
+
+  if (!intake) {
+    return (
+      <div className="flex w-full flex-col gap-6 px-4 py-10">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            onClick={() => router.push('/patient/dashboard')}
+            className="inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:text-sky-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Zurück
+          </button>
+          <Button variant="secondary" size="sm" onClick={() => router.push('/patient/dialog?context=status')}>
+            Im Chat öffnen
+          </Button>
+        </div>
+
+        <Card padding="md" shadow="sm" className="space-y-3">
+          <h1 className="text-xl font-semibold text-slate-900">Noch kein Status verfügbar</h1>
+          <p className="text-sm text-slate-700">
+            Sobald Ihre Erfassung vorliegt, sehen Sie hier Prozessstand, offene Punkte und Korrekturen.
+          </p>
+          <div className="pt-1">
+            <Button variant="primary" size="md" onClick={() => router.push('/patient/dialog?context=status')}>
+              Erfassung im Chat starten
+            </Button>
+          </div>
+        </Card>
       </div>
     )
   }
@@ -298,7 +377,7 @@ export default function PatientStatusClient() {
             icon={<MessageCircle className="h-4 w-4" />}
             onClick={() =>
               router.push(
-                `/patient/dialog?context=correction&prefill=${encodeURIComponent(
+                `/patient/dialog?context=correction&correction_type=medication_missing&correction_source_context=status_page&prefill=${encodeURIComponent(
                   'Ich habe ein Medikament vergessen: ',
                 )}`,
               )
@@ -311,7 +390,7 @@ export default function PatientStatusClient() {
             size="md"
             onClick={() =>
               router.push(
-                `/patient/dialog?context=correction&prefill=${encodeURIComponent(
+                `/patient/dialog?context=correction&correction_type=free_text&correction_source_context=status_page&prefill=${encodeURIComponent(
                   'Bitte korrigiere folgende Angabe: ',
                 )}`,
               )
@@ -320,6 +399,19 @@ export default function PatientStatusClient() {
             Freitext-Korrektur starten
           </Button>
         </div>
+
+        {latestCorrection ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+            <p className="font-semibold text-slate-900">Zuletzt gemeldete Korrektur</p>
+            <p className="mt-1">
+              {toCorrectionTypeLabel(latestCorrection.type)} · {toCorrectionSourceLabel(latestCorrection.source_context)} ·{' '}
+              {toGermanDate(latestCorrection.created_at)}
+            </p>
+            {latestCorrection.message_excerpt ? <p className="mt-1">„{latestCorrection.message_excerpt}“</p> : null}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500">Noch keine Korrektur gemeldet.</p>
+        )}
       </Card>
     </div>
   )

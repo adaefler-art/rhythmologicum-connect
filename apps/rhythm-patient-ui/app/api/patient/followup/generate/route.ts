@@ -24,6 +24,16 @@ const requestSchema = z
     asked_question_ids: z.array(z.string().min(1)).optional(),
     asked_question_text: z.string().min(1).optional(),
     asked_answer_text: z.string().min(1).optional(),
+    correction_type: z
+      .enum([
+        'medication_missing',
+        'medication_incorrect',
+        'history_missing',
+        'symptom_timeline',
+        'free_text',
+      ])
+      .optional(),
+    correction_source_context: z.enum(['status_page', 'chat', 'followup']).optional(),
   })
   .refine((value) => Boolean(value.patientId || value.intakeId), {
     message: 'patientId or intakeId is required',
@@ -34,6 +44,19 @@ type IntakeRecord = {
   user_id: string
   patient_id: string | null
   structured_data: Record<string, unknown>
+}
+
+type CorrectionType = z.infer<typeof requestSchema>['correction_type']
+type CorrectionSourceContext = z.infer<typeof requestSchema>['correction_source_context']
+
+type CorrectionJournalEntry = {
+  id: string
+  created_at: string
+  type: Exclude<CorrectionType, undefined>
+  source_context: Exclude<CorrectionSourceContext, undefined>
+  message_excerpt?: string
+  answer_classification?: FollowupAnswerClassification
+  asked_question_id?: string
 }
 
 const isFollowupBlockedBySafety = (structuredData: StructuredIntakeData) => {
@@ -380,6 +403,28 @@ const removeAskedQuestionEcho = (params: {
     ...params.followup,
     next_questions: nextQuestions,
     queue,
+  }
+}
+
+const toCorrectionExcerpt = (value?: string) => {
+  const trimmed = value?.trim()
+  if (!trimmed) return undefined
+  return trimmed.length > 180 ? `${trimmed.slice(0, 177).trim()}...` : trimmed
+}
+
+const appendCorrectionJournalEntry = (params: {
+  followup: NonNullable<StructuredIntakeData['followup']>
+  entry: CorrectionJournalEntry
+}) => {
+  const existing = Array.isArray(params.followup.correction_journal)
+    ? params.followup.correction_journal
+    : []
+
+  const trimmed = [...existing, params.entry].slice(-25)
+
+  return {
+    ...params.followup,
+    correction_journal: trimmed,
   }
 }
 
@@ -915,6 +960,26 @@ export async function POST(req: Request) {
       askedQuestionText: body.asked_question_text,
     })
 
+    const shouldTraceCorrection = Boolean(body.correction_type || body.correction_source_context)
+    const effectiveCorrectionType: CorrectionType = body.correction_type ?? 'free_text'
+    const effectiveCorrectionSourceContext: CorrectionSourceContext =
+      body.correction_source_context ?? 'chat'
+
+    if (shouldTraceCorrection) {
+      followupWithClarification = appendCorrectionJournalEntry({
+        followup: followupWithClarification,
+        entry: {
+          id: `corr_${Date.now()}`,
+          created_at: new Date().toISOString(),
+          type: effectiveCorrectionType,
+          source_context: effectiveCorrectionSourceContext,
+          message_excerpt: toCorrectionExcerpt(body.asked_answer_text),
+          answer_classification: askedQuestionIds.length > 0 ? answerClassification : undefined,
+          asked_question_id: askedQuestionIds[0],
+        },
+      })
+    }
+
     const nextStructuredData: StructuredIntakeData = {
       ...structuredData,
       followup: followupWithClarification,
@@ -955,6 +1020,10 @@ export async function POST(req: Request) {
             answered_count: askedQuestionIds.length,
             answer_classification: answerClassification,
             clarification_suppressed: suppressClarificationPrompt,
+            correction_type: shouldTraceCorrection ? effectiveCorrectionType : null,
+            correction_source_context: shouldTraceCorrection
+              ? effectiveCorrectionSourceContext
+              : null,
           },
         }),
       )

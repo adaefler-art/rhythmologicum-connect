@@ -105,6 +105,15 @@ type FollowupObjectiveSnapshot = {
   status: string
 }
 
+type CorrectionType =
+  | 'medication_missing'
+  | 'medication_incorrect'
+  | 'history_missing'
+  | 'symptom_timeline'
+  | 'free_text'
+
+type CorrectionSourceContext = 'status_page' | 'chat' | 'followup'
+
 type ProgramReadinessSnapshot = {
   active_block_id: string | null
 }
@@ -590,6 +599,8 @@ export function DialogScreenV2() {
   const context = searchParams.get('context')
   const assessmentId = searchParams.get('assessmentId')
   const prefill = searchParams.get('prefill')
+  const correctionType = searchParams.get('correction_type')
+  const correctionSourceContext = searchParams.get('correction_source_context')
   const devtoolsEnabled = searchParams.has('devtools')
   const isDevPreviewHost =
     env.NODE_ENV !== 'production' ||
@@ -700,6 +711,8 @@ export function DialogScreenV2() {
     askedQuestionId?: string
     askedQuestionText?: string
     askedAnswerText?: string
+    correctionType?: CorrectionType
+    correctionSourceContext?: CorrectionSourceContext
   }) => {
     const response = await fetch('/api/patient/followup/generate', {
       method: 'POST',
@@ -709,6 +722,8 @@ export function DialogScreenV2() {
         asked_question_id: params.askedQuestionId,
         asked_question_text: params.askedQuestionText,
         asked_answer_text: params.askedAnswerText,
+        correction_type: params.correctionType,
+        correction_source_context: params.correctionSourceContext,
       }),
     })
 
@@ -763,6 +778,28 @@ export function DialogScreenV2() {
             : null,
     }
   }
+
+  const resolveCorrectionType = (value?: string | null): CorrectionType | undefined => {
+    if (value === 'medication_missing') return 'medication_missing'
+    if (value === 'medication_incorrect') return 'medication_incorrect'
+    if (value === 'history_missing') return 'history_missing'
+    if (value === 'symptom_timeline') return 'symptom_timeline'
+    if (value === 'free_text') return 'free_text'
+    return undefined
+  }
+
+  const resolveCorrectionSourceContext = (
+    value?: string | null,
+  ): CorrectionSourceContext | undefined => {
+    if (value === 'status_page') return 'status_page'
+    if (value === 'chat') return 'chat'
+    if (value === 'followup') return 'followup'
+    return undefined
+  }
+
+  const resolvedCorrectionType = resolveCorrectionType(correctionType)
+  const resolvedCorrectionSourceContext = resolveCorrectionSourceContext(correctionSourceContext)
+  const isCorrectionContext = context === 'correction'
 
   async function syncIntakeDebugMeta(latestIntake?: IntakeEntry | null) {
     try {
@@ -1613,6 +1650,10 @@ export function DialogScreenV2() {
             askedQuestionId: currentFollowupQuestion.id,
             askedQuestionText: currentFollowupQuestion.question,
             askedAnswerText: trimmed,
+            correctionType: isCorrectionContext ? (resolvedCorrectionType ?? 'free_text') : undefined,
+            correctionSourceContext: isCorrectionContext
+              ? (resolvedCorrectionSourceContext ?? 'chat')
+              : undefined,
           })
 
           setLatestClinicalIntakeId(followupResult.intakeId)
@@ -1707,6 +1748,19 @@ export function DialogScreenV2() {
             setSendError('Es gab ein technisches Problem bei der Folgefrage. Bitte senden Sie kurz erneut.')
             return
           }
+        }
+      }
+
+      if (!currentFollowupQuestion && latestClinicalIntakeId && isCorrectionContext) {
+        try {
+          await generateFollowup({
+            intakeId: latestClinicalIntakeId,
+            askedAnswerText: trimmed,
+            correctionType: resolvedCorrectionType ?? 'free_text',
+            correctionSourceContext: resolvedCorrectionSourceContext ?? 'chat',
+          })
+        } catch (correctionTraceError) {
+          console.warn('[DialogScreenV2] Failed to persist correction trace metadata', correctionTraceError)
         }
       }
 

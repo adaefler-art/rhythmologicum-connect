@@ -41,6 +41,29 @@ export const clinicalFollowupSchema = z.object({
       z.union([z.literal('missing'), z.literal('unclear'), z.literal('resolved')]),
     )
     .optional(),
+  correction_journal: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        created_at: z.string().min(1),
+        type: z.union([
+          z.literal('medication_missing'),
+          z.literal('medication_incorrect'),
+          z.literal('history_missing'),
+          z.literal('symptom_timeline'),
+          z.literal('free_text'),
+        ]),
+        source_context: z.union([
+          z.literal('status_page'),
+          z.literal('chat'),
+          z.literal('followup'),
+        ]),
+        message_excerpt: z.string().optional(),
+        answer_classification: z.string().optional(),
+        asked_question_id: z.string().optional(),
+      }),
+    )
+    .optional(),
   readiness: z
     .object({
       state: z.union([

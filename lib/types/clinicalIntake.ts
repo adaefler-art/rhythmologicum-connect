@@ -198,6 +198,25 @@ export interface ClinicalFollowupObjective {
   rationale: string
 }
 
+export type ClinicalCorrectionType =
+  | 'medication_missing'
+  | 'medication_incorrect'
+  | 'history_missing'
+  | 'symptom_timeline'
+  | 'free_text'
+
+export type ClinicalCorrectionSourceContext = 'status_page' | 'chat' | 'followup'
+
+export interface ClinicalCorrectionJournalEntry {
+  id: string
+  created_at: string
+  type: ClinicalCorrectionType
+  source_context: ClinicalCorrectionSourceContext
+  message_excerpt?: string
+  answer_classification?: string
+  asked_question_id?: string
+}
+
 export type ClinicalReadinessState = 'SafetyReady' | 'VisitReady' | 'ProblemReady' | 'ProgramReady'
 
 export type ClinicalUc2TriggerReason =
@@ -230,6 +249,7 @@ export interface ClinicalFollowup {
   objectives?: ClinicalFollowupObjective[]
   active_objective_ids?: string[]
   objective_state_overrides?: Record<string, 'missing' | 'unclear' | 'resolved'>
+  correction_journal?: ClinicalCorrectionJournalEntry[]
   readiness?: ClinicalReadinessSnapshot
   program_readiness?: ClinicalProgramReadinessArtifact
   lifecycle?: {
