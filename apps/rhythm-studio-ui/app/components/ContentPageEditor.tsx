@@ -503,7 +503,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                placeholder="z.B. Info, Tutorial, FAQ"
+                placeholder="z.B. start-slider, Info, Tutorial, FAQ"
                 inputSize="sm"
               />
             </div>

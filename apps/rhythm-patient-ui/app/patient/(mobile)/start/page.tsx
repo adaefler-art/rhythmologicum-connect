@@ -13,7 +13,6 @@ import {
   ChevronLeft,
 } from '@/lib/ui/mobile-v2/icons'
 import { DashboardCards } from '@/components/patient/DashboardCards'
-import { useDashboardData } from '@/lib/hooks/useDashboardData'
 
 const CONTENT_SLIDER_FALLBACK_TEASER_IMAGE_SRC = '/mobile-v2/Dashboard.png'
 
@@ -55,13 +54,73 @@ function getTeaserImageForActionTarget(actionTarget: string | null): string {
 
 export default function PatientEntryScreen() {
   const router = useRouter()
-  const { data: dashboardData } = useDashboardData()
+  const [sliderItems, setSliderItems] = useState<Array<{
+    id: string
+    title: string
+    excerpt: string
+    actionTarget: string
+    priority: number
+  }>>([])
+  const [sliderLoading, setSliderLoading] = useState(true)
   const [activeContentIndex, setActiveContentIndex] = useState(0)
 
   const contentTiles = useMemo(() => {
-    const tiles = dashboardData?.contentTiles ?? []
-    return tiles.filter((tile) => !!tile.actionTarget)
-  }, [dashboardData?.contentTiles])
+    return [...sliderItems].sort((first, second) => second.priority - first.priority)
+  }, [sliderItems])
+
+  useEffect(() => {
+    let active = true
+
+    const loadSliderItems = async () => {
+      try {
+        setSliderLoading(true)
+        const response = await fetch('/api/patient/content-slider', {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+        })
+
+        if (!response.ok) {
+          setSliderItems([])
+          return
+        }
+
+        const payload = (await response.json()) as {
+          success?: boolean
+          data?: {
+            items?: Array<{
+              id: string
+              title: string
+              excerpt: string
+              actionTarget: string
+              priority: number
+            }>
+          }
+        }
+
+        if (!active) return
+
+        if (!payload.success || !Array.isArray(payload.data?.items)) {
+          setSliderItems([])
+          return
+        }
+
+        setSliderItems(payload.data.items)
+      } catch {
+        if (!active) return
+        setSliderItems([])
+      } finally {
+        if (!active) return
+        setSliderLoading(false)
+      }
+    }
+
+    loadSliderItems()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     setActiveContentIndex(0)
@@ -69,6 +128,11 @@ export default function PatientEntryScreen() {
 
   const activeContentTile = contentTiles[activeContentIndex] ?? null
   const activeContentTeaserImageSrc = getTeaserImageForActionTarget(activeContentTile?.actionTarget ?? null)
+
+  const openActiveContent = () => {
+    if (!activeContentTile?.actionTarget) return
+    router.push(activeContentTile.actionTarget)
+  }
 
   const goToPreviousContent = () => {
     if (contentTiles.length <= 1) return
@@ -121,70 +185,61 @@ export default function PatientEntryScreen() {
 
           <Card className="border border-slate-200" padding="lg" shadow="sm">
             {activeContentTile ? (
-              <div className="space-y-4">
-                <div className="overflow-hidden rounded-xl border border-slate-200">
+              <div className="space-y-3">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={openActiveContent}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      openActiveContent()
+                    }
+                  }}
+                  className="relative cursor-pointer overflow-hidden rounded-xl border border-slate-200"
+                >
                   <Image
                     src={activeContentTeaserImageSrc}
                     alt={`Teaserbild: ${activeContentTile.title}`}
                     width={1200}
                     height={675}
-                    className="h-36 w-full object-cover"
+                    className="h-56 w-full object-cover"
                   />
-                </div>
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-                      <MessageCircle className="h-5 w-5" />
-                    </div>
+                  <div className="pointer-events-none absolute bottom-0 left-0 right-0 p-4">
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-slate-900">Empfohlene Inhalte</p>
-                      <p className="text-sm font-medium text-slate-800">{activeContentTile.title}</p>
-                      {activeContentTile.description && (
-                        <p className="text-sm text-slate-600">{activeContentTile.description}</p>
+                      <p className="text-sm font-semibold text-white">{activeContentTile.title}</p>
+                      {activeContentTile.excerpt && (
+                        <p className="text-sm text-white/90">{activeContentTile.excerpt}</p>
                       )}
                     </div>
                   </div>
 
                   {contentTiles.length > 1 && (
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                    <>
+                      <button
+                        type="button"
                         onClick={goToPreviousContent}
-                        icon={<ChevronLeft className="h-4 w-4" />}
+                        aria-label="Vorheriger Inhalt"
+                        className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white"
                       >
-                        Zurueck
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={goToNextContent}
-                        icon={<ChevronRight className="h-4 w-4" />}
-                        iconPosition="right"
+                        aria-label="Nächster Inhalt"
+                        className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white"
                       >
-                        Weiter
-                      </Button>
-                    </div>
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                    </>
                   )}
                 </div>
 
-                <Button
-                  variant="secondary"
-                  size="md"
-                  fullWidth
-                  icon={<ChevronRight className="h-4 w-4" />}
-                  iconPosition="right"
-                  onClick={() => {
-                    if (!activeContentTile.actionTarget) return
-                    router.push(activeContentTile.actionTarget)
-                  }}
-                >
-                  Inhalt oeffnen
-                </Button>
-
                 {contentTiles.length > 1 && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-2">
                     {contentTiles.map((tile, index) => (
                       <button
                         key={tile.id}
@@ -209,7 +264,9 @@ export default function PatientEntryScreen() {
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-slate-900">Empfohlene Inhalte</p>
                   <p className="text-sm text-slate-600">
-                    Inhalte werden geladen oder sind aktuell nicht verfuegbar.
+                    {sliderLoading
+                      ? 'Inhalte werden geladen.'
+                      : 'Keine Inhalte mit Tag "start-slider" gefunden.'}
                   </p>
                 </div>
               </div>
