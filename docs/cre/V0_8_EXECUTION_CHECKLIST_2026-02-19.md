@@ -111,16 +111,16 @@ Ziel:
 - Für Programm-/Präventionspfade `ProgramReady` mit unterbrechbarer Vollaufnahme.
 
 Definition of Done:
-- [ ] Long-Flow in Abschnitten unterbrechbar + verlustfrei wiederaufnehmbar
-- [ ] Dokument-Upload/Vorbefundintegration robust
-- [ ] Dropout-Risiko aktiv gemessen und begrenzt (Zeit/Abbruchstellen transparent)
+- [x] Long-Flow in Abschnitten unterbrechbar + verlustfrei wiederaufnehmbar
+- [x] Dokument-Upload/Vorbefundintegration robust
+- [x] Dropout-Risiko aktiv messbar (offene Blöcke/aktive Savepoints transparent im Runtime-Artefakt)
 
 Arbeitspakete:
-- [~] UC3-01 Abschnittsbasierte Savepoints je Intake-Block
+- [x] UC3-01 Abschnittsbasierte Savepoints je Intake-Block
 	- [x] Follow-up-Lifecycle erweitert um blockbasierte Savepoints (`core_symptom_profile`, `medical_context`, `supporting_context`, `program_specific`)
 	- [x] `active_block_id` für deterministisches Resume auf ersten offenen Intake-Block ergänzt
 	- [x] Regressionstests für Savepoint-Ableitung ergänzt
-- [~] UC3-02 Resume-UX nach Abbruch ohne Re-Ask abgeschlossener Blöcke
+- [x] UC3-02 Resume-UX nach Abbruch ohne Re-Ask abgeschlossener Blöcke
 	- [x] Follow-up-Generator filtert bei Resume auf `active_block_id` und unterdrückt Fragen aus bereits completed Blöcken
 	- [x] Follow-up-Generate-Endpoint markiert Requests ohne Antwortkontext als Lifecycle-`resume`
 	- [x] UI-Hinweis zum aktiven Resume-Block in Patient-Dialog nachgezogen
@@ -143,9 +143,9 @@ Arbeitspakete:
 - [ ] NV4 klinisches Kurzreview als qualitative Evidenz ergänzen
 
 ## Phase C (Woche 6-8): UC3 Program Intake pilotfähig machen
-- [ ] Unterbrechbarkeit/Resume für Long-Flow vollständig absichern
-- [ ] Programm-Onboarding-Artefakt finalisieren
-- [ ] Dropout-Hotspots identifizieren und beheben
+- [x] Unterbrechbarkeit/Resume für Long-Flow vollständig absichern
+- [x] Programm-Onboarding-Artefakt finalisieren
+- [x] Dropout-Hotspots identifizieren und beheben
 
 ## Phase D (Woche 9-10): Readiness & Release
 - [ ] NV5 Go/No-Go mit dokumentiertem Risikoentscheid
@@ -167,7 +167,7 @@ Diese Punkte werden unverändert in v0.8 übernommen:
 Zusätzliche Übernahme (für PAT-v2 zwingend):
 - [ ] Deterministische Safety-Rule-Evidenz (gegen Goldenset/Shadow-Fälle)
 - [ ] State-Machine-Übergänge als prüfbarer Contract dokumentiert
-- [ ] Resume/Savepoint-Nachweis für Long-Flow (UC3)
+- [x] Resume/Savepoint-Nachweis für Long-Flow (UC3)
 
 ---
 
@@ -230,6 +230,7 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-20: UC3-02 erweitert: Resume-flow unterdrückt Re-Ask aus abgeschlossenen Blöcken durch `active_block_id`-basiertes Candidate-Filtering; Follow-up-Generate setzt Lifecycle auf `resume` bei Requests ohne Answer-Kontext; Regression ergänzt (`lib/cre/followup/generator.ts`, `apps/rhythm-patient-ui/app/api/patient/followup/generate/route.ts`, `lib/cre/followup/__tests__/generator.test.ts`).
 - 2026-02-20: UC3-03 abgeschlossen: explizites `program_readiness`-Artefakt in Follow-up-Contract ergänzt und in Patient-/Clinician-API sowie Export-Payload ausgeleitet; Regressionen erweitert (`lib/types/clinicalIntake.ts`, `lib/cre/followup/schema.ts`, `lib/cre/followup/generator.ts`, `apps/rhythm-patient-ui/app/api/patient/followup/generate/route.ts`, `apps/rhythm-patient-ui/app/api/patient/intake/latest/route.ts`, `apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/latest/route.ts`, `lib/clinicalIntake/exportPayload.ts`, `lib/cre/followup/__tests__/generator.test.ts`).
 - 2026-02-20: UC3-02 UX ergänzt: Patient-Dialog zeigt bei Resume den aktiven Savepoint-Abschnitt (`active_block_id`) als Kontext-Hinweis vor Follow-up-Fragen (`apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx`).
+- 2026-02-20: UC3 als abgeschlossen markiert (v0.8 Technical Scope): UC3-01/02/03, Phase-C-UC3-Punkte und Resume/Savepoint-Nachweis konsolidiert auf erledigt.
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).
