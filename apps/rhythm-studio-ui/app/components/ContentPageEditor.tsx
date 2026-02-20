@@ -45,6 +45,7 @@ type ContentPageEditorProps = {
  * - Slug validation
  */
 export default function ContentPageEditor({ initialData, mode, pageId }: ContentPageEditorProps) {
+  const START_SLIDER_CATEGORY_TAG = 'start-slider'
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -74,6 +75,19 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   // UI state
   const [slugError, setSlugError] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(true)
+
+  const isStartSliderCategory = category.trim().toLowerCase() === START_SLIDER_CATEGORY_TAG
+
+  const handleStartSliderCategoryToggle = (checked: boolean) => {
+    if (checked) {
+      setCategory(START_SLIDER_CATEGORY_TAG)
+      return
+    }
+
+    if (isStartSliderCategory) {
+      setCategory('')
+    }
+  }
 
   // Load funnels for dropdown
   useEffect(() => {
@@ -506,6 +520,19 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 placeholder="z.B. start-slider, Info, Tutorial, FAQ"
                 inputSize="sm"
               />
+
+              <div className="mt-3 flex items-start gap-2">
+                <input
+                  id="start-slider-tag"
+                  type="checkbox"
+                  checked={isStartSliderCategory}
+                  onChange={(event) => handleStartSliderCategoryToggle(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-ring"
+                />
+                <label htmlFor="start-slider-tag" className="text-sm text-muted-foreground">
+                  Auf Patient-Startseite im Slider anzeigen (Tag: start-slider)
+                </label>
+              </div>
             </div>
 
             {/* Funnel */}
