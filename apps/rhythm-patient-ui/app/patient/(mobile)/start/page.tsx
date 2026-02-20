@@ -52,12 +52,22 @@ function getTeaserImageForActionTarget(actionTarget: string | null): string {
   return fallbackImages[hash % fallbackImages.length] ?? CONTENT_SLIDER_FALLBACK_TEASER_IMAGE_SRC
 }
 
+function resolveTeaserImage(actionTarget: string | null, teaserImageUrl?: string | null): string {
+  const trimmedTeaser = teaserImageUrl?.trim()
+  if (trimmedTeaser) {
+    return trimmedTeaser
+  }
+
+  return getTeaserImageForActionTarget(actionTarget)
+}
+
 export default function PatientEntryScreen() {
   const router = useRouter()
   const [sliderItems, setSliderItems] = useState<Array<{
     id: string
     title: string
     excerpt: string
+    teaserImageUrl?: string | null
     actionTarget: string
     priority: number
   }>>([])
@@ -92,6 +102,7 @@ export default function PatientEntryScreen() {
               id: string
               title: string
               excerpt: string
+              teaserImageUrl?: string | null
               actionTarget: string
               priority: number
             }>
@@ -127,7 +138,10 @@ export default function PatientEntryScreen() {
   }, [contentTiles.length])
 
   const activeContentTile = contentTiles[activeContentIndex] ?? null
-  const activeContentTeaserImageSrc = getTeaserImageForActionTarget(activeContentTile?.actionTarget ?? null)
+  const activeContentTeaserImageSrc = resolveTeaserImage(
+    activeContentTile?.actionTarget ?? null,
+    activeContentTile?.teaserImageUrl,
+  )
 
   const openActiveContent = () => {
     if (!activeContentTile?.actionTarget) return

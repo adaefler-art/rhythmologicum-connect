@@ -26,6 +26,7 @@ function normalizeContentPage(raw: {
   flow_step: string | null
   order_index: number | null
   layout: string | null
+  teaser_image_url: string | null
 }): ContentPageEditorData {
   return {
     id: raw.id,
@@ -40,6 +41,7 @@ function normalizeContentPage(raw: {
     flow_step: raw.flow_step,
     order_index: raw.order_index,
     layout: raw.layout,
+    teaser_image_url: raw.teaser_image_url,
   }
 }
 
@@ -71,7 +73,8 @@ async function fetchContentPageByKey(
     priority,
     funnel_id,
     flow_step,
-    order_index
+    order_index,
+    teaser_image_url
   `
 
   const { data: exactMatch, error: exactMatchError } = await supabase
@@ -145,6 +148,7 @@ async function fetchContentPageByKeyViaApi(key: string): Promise<ContentPageEdit
       flow_step: string | null
       order_index: number | null
       layout: string | null
+      teaser_image_url: string | null
     } | null
   }
 

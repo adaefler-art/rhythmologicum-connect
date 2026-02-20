@@ -40,6 +40,7 @@ export async function GET() {
 				layout,
 				category,
 				priority,
+				teaser_image_url,
 				funnel_id,
 				updated_at,
 				created_at,
@@ -68,6 +69,7 @@ export async function GET() {
 						layout,
 						category,
 						priority,
+						teaser_image_url,
 						funnel_id,
 						updated_at,
 						created_at,
@@ -188,6 +190,9 @@ export async function POST(request: NextRequest) {
 		if (body.flow_step !== undefined) insertData.flow_step = body.flow_step || null
 		if (body.order_index !== undefined) insertData.order_index = body.order_index
 		if (body.layout !== undefined) insertData.layout = body.layout || null
+		if (body.teaser_image_url !== undefined) {
+			insertData.teaser_image_url = body.teaser_image_url || null
+		}
 
 		// Create content page
 		const { data: newPage, error: insertError } = await supabase

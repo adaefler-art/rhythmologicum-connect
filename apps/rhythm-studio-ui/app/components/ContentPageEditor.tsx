@@ -26,6 +26,7 @@ export type ContentPageEditorData = {
   flow_step: string | null
   order_index: number | null
   layout: string | null
+  teaser_image_url: string | null
 }
 
 type ContentPageEditorProps = {
@@ -65,6 +66,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   const [flowStep, setFlowStep] = useState(initialData?.flow_step || '')
   const [orderIndex, setOrderIndex] = useState<number | null>(initialData?.order_index ?? null)
   const [layout] = useState(initialData?.layout || 'default')
+  const [teaserImageUrl, setTeaserImageUrl] = useState(initialData?.teaser_image_url || '')
   const status: 'draft' | 'published' = (initialData?.status as 'draft' | 'published') || 'draft'
 
   // F3: Sections state
@@ -226,6 +228,11 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
       return
     }
 
+    if (mode === 'edit' && !pageId) {
+      setError('Seiten-ID fehlt. Bitte Seite neu laden und erneut speichern.')
+      return
+    }
+
     setSaving(true)
 
     try {
@@ -241,6 +248,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         flow_step: flowStep.trim() || null,
         order_index: orderIndex,
         layout: layout || null,
+        teaser_image_url: teaserImageUrl.trim() || null,
       }
 
       const url =
@@ -256,7 +264,12 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         body: JSON.stringify(payload),
       })
 
-      const data = await response.json()
+      let data: { error?: string } = {}
+      try {
+        data = await response.json()
+      } catch {
+        data = {}
+      }
 
       if (!response.ok) {
         if (response.status === 409) {
@@ -533,6 +546,21 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                   Auf Patient-Startseite im Slider anzeigen (Tag: start-slider)
                 </label>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="teaserImageUrl" className="block text-sm font-medium text-foreground mb-2">
+                Teaserbild URL
+              </label>
+              <Input
+                id="teaserImageUrl"
+                type="url"
+                value={teaserImageUrl}
+                onChange={(e) => setTeaserImageUrl(e.target.value)}
+                placeholder="https://... oder /images/..."
+                helperText="Wird im Patient-Startseiten-Slider als Bild verwendet"
+                inputSize="sm"
+              />
             </div>
 
             {/* Funnel */}

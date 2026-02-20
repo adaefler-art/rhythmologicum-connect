@@ -12,6 +12,7 @@ type SliderRow = {
   slug: string | null
   title: string | null
   excerpt: string | null
+  teaser_image_url: string | null
   priority: number | null
   created_at: string
 }
@@ -33,7 +34,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('content_pages')
-    .select('id, slug, title, excerpt, priority, created_at')
+    .select('id, slug, title, excerpt, teaser_image_url, priority, created_at')
     .eq('status', 'published')
     .is('deleted_at', null)
     .ilike('category', START_SLIDER_TAG)
@@ -59,6 +60,7 @@ export async function GET() {
       id: row.id,
       title: row.title ?? 'Inhalt',
       excerpt: row.excerpt ?? '',
+      teaserImageUrl: row.teaser_image_url,
       actionTarget: `/patient/content/${row.slug}`,
       priority: row.priority ?? 0,
     }))

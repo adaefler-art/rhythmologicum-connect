@@ -3075,7 +3075,8 @@ CREATE TABLE IF NOT EXISTS "public"."content_pages" (
     "seo_title" "text",
     "seo_description" "text",
     "flow_step" "text",
-    "order_index" integer
+    "order_index" integer,
+    "teaser_image_url" "text"
 );
 
 
@@ -3115,6 +3116,10 @@ COMMENT ON COLUMN "public"."content_pages"."flow_step" IS 'Identifies which step
 
 
 COMMENT ON COLUMN "public"."content_pages"."order_index" IS 'Determines the display order of content pages within a flow step. Lower numbers appear first. NULL if ordering is not relevant.';
+
+
+
+COMMENT ON COLUMN "public"."content_pages"."teaser_image_url" IS 'Optional teaser image URL for card/slider presentation.';
 
 
 

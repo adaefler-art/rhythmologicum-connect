@@ -49,9 +49,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 			layout,
 			category,
 			priority,
+			teaser_image_url,
 			funnel_id,
 			flow_step,
 			order_index,
+			teaser_image_url,
 			updated_at,
 			created_at,
 			deleted_at
@@ -92,9 +94,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 				layout,
 				category,
 				priority,
+				teaser_image_url,
 				funnel_id,
 				flow_step,
 				order_index,
+				teaser_image_url,
 				updated_at,
 				created_at
 			`
@@ -261,6 +265,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 		if (body.flow_step !== undefined) updateData.flow_step = body.flow_step || null
 		if (body.order_index !== undefined) updateData.order_index = body.order_index
 		if (body.layout !== undefined) updateData.layout = body.layout || null
+		if (body.teaser_image_url !== undefined) {
+			updateData.teaser_image_url = body.teaser_image_url || null
+		}
+		if (body.teaser_image_url !== undefined) {
+			updateData.teaser_image_url = body.teaser_image_url || null
+		}
 
 		// Update content page
 		const { data: updatedPage, error: updateError } = await adminClient

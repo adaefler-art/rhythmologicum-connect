@@ -905,6 +905,7 @@ export type Database = {
           seo_title: string | null
           slug: string
           status: string
+          teaser_image_url: string | null
           title: string
           updated_at: string
         }
@@ -924,6 +925,7 @@ export type Database = {
           seo_title?: string | null
           slug: string
           status?: string
+          teaser_image_url?: string | null
           title: string
           updated_at?: string
         }
@@ -943,6 +945,7 @@ export type Database = {
           seo_title?: string | null
           slug?: string
           status?: string
+          teaser_image_url?: string | null
           title?: string
           updated_at?: string
         }
