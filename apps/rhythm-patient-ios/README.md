@@ -8,6 +8,7 @@ Hybrid iOS shell for the deployed patient web UI.
 - Starts at `/patient/start` (UC1 entry)
 - Uses native iOS bottom tab navigation in shell (`Start`, `Chat`, `Status`, `Konto`)
 - Opens native chat client via dedicated `Chat` tab (separate from web navigation)
+- Forces Light Mode in shell UI (independent of iOS system dark mode)
 - Preserves cookie/session behavior by using the first-party deployed domain
 - Adds lightweight diagnostics via query marker + user-agent suffix (no PHI)
 - Supports deep links for `/patient/**` (Universal Links + custom scheme fallback)

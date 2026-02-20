@@ -233,6 +233,7 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-20: UC3 als abgeschlossen markiert (v0.8 Technical Scope): UC3-01/02/03, Phase-C-UC3-Punkte und Resume/Savepoint-Nachweis konsolidiert auf erledigt.
 - 2026-02-20: Neue Patientenseite `/patient/status` ergänzt (Prozessstatus, erfasste Daten, offene ToDos) inklusive Chat-Korrektur-Einstieg mit vorbefüllten Prompts; Navigation über Dashboard-CTA und Mobile-Menü verdrahtet (`apps/rhythm-patient-ui/app/patient/(mobile)/status/page.tsx`, `apps/rhythm-patient-ui/app/patient/(mobile)/status/client.tsx`, `apps/rhythm-patient-ui/app/patient/(mobile)/dashboard/client.tsx`, `apps/rhythm-patient-ui/app/patient/(mobile)/navigation/menuConfig.ts`, `apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx`).
 - 2026-02-20: Native iOS-Shell-Menü um `Status`-Tab erweitert; Tab öffnet direkt `/patient/status` im Web-Start-Context (`apps/rhythm-patient-ios/ios/App/App/AppDelegate.swift`, `apps/rhythm-patient-ios/README.md`).
+- 2026-02-20: iOS-Shell-Tab-Verhalten korrigiert: `Status` bleibt als aktiver Tab selektiert (kein Auto-Sprung auf `Start`) und Light Mode app-weit erzwungen für konsistente UI (`apps/rhythm-patient-ios/ios/App/App/AppDelegate.swift`, `apps/rhythm-patient-ios/README.md`).
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).

@@ -10,6 +10,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UITabBarControllerDelegat
 
     var window: UIWindow?
     private weak var startWebRootViewController: UIViewController?
+    private weak var statusWebRootViewController: UIViewController?
     private weak var tabBarControllerRef: UITabBarController?
     private weak var statusNavigationControllerRef: UINavigationController?
     private var sessionKeepAliveTimer: Timer?
@@ -38,6 +39,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UITabBarControllerDelegat
         webRootViewController.title = "Start"
         webRootViewController.tabBarItem = UITabBarItem(title: "Start", image: UIImage(systemName: "house"), tag: 0)
 
+        let statusWebViewController = storyboard.instantiateInitialViewController() ?? UIViewController()
+        statusWebRootViewController = statusWebViewController
+        statusWebViewController.title = "Status"
+        statusWebViewController.tabBarItem = UITabBarItem(title: "Status", image: UIImage(systemName: "checklist"), tag: 3)
+
         let chatViewModel = NativeChatViewModel(
             apiClient: NativeChatAPIClient(config: NativeChatConfig.current)
         )
@@ -62,14 +68,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UITabBarControllerDelegat
         accountHostingController.title = "Konto"
         accountHostingController.tabBarItem = UITabBarItem(title: "Konto", image: UIImage(systemName: "person.crop.circle"), tag: 2)
 
-        let statusPlaceholderController = UIViewController()
-        statusPlaceholderController.view.backgroundColor = .systemGroupedBackground
-        statusPlaceholderController.title = "Status"
-        statusPlaceholderController.tabBarItem = UITabBarItem(title: "Status", image: UIImage(systemName: "checklist"), tag: 3)
-
         let startNavigationController = UINavigationController(rootViewController: webRootViewController)
         let chatNavigationController = UINavigationController(rootViewController: chatHostingController)
-        let statusNavigationController = UINavigationController(rootViewController: statusPlaceholderController)
+        let statusNavigationController = UINavigationController(rootViewController: statusWebViewController)
         let accountNavigationController = UINavigationController(rootViewController: accountHostingController)
 
         startNavigationController.navigationBar.standardAppearance = navBarAppearance
@@ -104,6 +105,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UITabBarControllerDelegat
         statusNavigationControllerRef = statusNavigationController
 
         let appWindow = UIWindow(frame: UIScreen.main.bounds)
+        appWindow.overrideUserInterfaceStyle = .light
+        tabBarController.overrideUserInterfaceStyle = .light
         appWindow.rootViewController = tabBarController
         appWindow.makeKeyAndVisible()
         window = appWindow
@@ -279,16 +282,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UITabBarControllerDelegat
         }
     }
 
-    private func loadWebPath(_ path: String) {
-        guard let webView = extractStartWebView() else { return }
+    private func loadWebPath(_ path: String, rootViewController: UIViewController? = nil) {
+        let targetController = rootViewController ?? startWebRootViewController
+        guard let webView = extractWebView(from: targetController) else { return }
         let escapedPath = path.replacingOccurrences(of: "'", with: "\\'")
         webView.evaluateJavaScript("window.location.assign('" + escapedPath + "')", completionHandler: nil)
     }
 
-    private func extractStartWebView() -> WKWebView? {
-        guard let startVC = startWebRootViewController else { return nil }
-
-        return findWKWebView(in: startVC)
+    private func extractWebView(from rootController: UIViewController?) -> WKWebView? {
+        guard let rootController = rootController else { return nil }
+        return findWKWebView(in: rootController)
     }
 
     private func findWKWebView(in controller: UIViewController?) -> WKWebView? {
@@ -318,16 +321,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UITabBarControllerDelegat
         return nil
     }
 
-    func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
-        guard let statusNavigationController = statusNavigationControllerRef else { return true }
+    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+        guard let statusNavigationController = statusNavigationControllerRef else { return }
 
         if viewController === statusNavigationController {
-            loadWebPath("/patient/status")
-            tabBarController.selectedIndex = 0
-            return false
+            DispatchQueue.main.async { [weak self] in
+                self?.loadWebPath("/patient/status", rootViewController: self?.statusWebRootViewController)
+            }
         }
-
-        return true
     }
 
 }
@@ -383,6 +384,7 @@ private struct ShellAccountView: View {
             .padding(16)
         }
         .background(Color(UIColor.systemGroupedBackground))
+        .preferredColorScheme(.light)
     }
 }
 
@@ -784,6 +786,7 @@ private struct NativeChatView: View {
             .padding(.bottom, 10)
         }
         .navigationBarTitle("Chat", displayMode: .inline)
+        .preferredColorScheme(.light)
         .onAppear {
             viewModel.bootstrapIfNeeded()
         }
