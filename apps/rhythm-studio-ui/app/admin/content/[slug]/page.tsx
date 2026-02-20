@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import { cookies, headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import ContentPageEditor, { ContentPageEditorData } from '@/app/components/ContentPageEditor'
 
 export const dynamic = 'force-dynamic'
@@ -24,37 +24,84 @@ function toLookupCandidates(rawKey: string): string[] {
 }
 
 async function fetchContentPageByKey(key: string) {
-  const headerList = await headers()
-  const host = headerList.get('host')
-  const protocol = host?.includes('localhost') ? 'http' : 'https'
+  const adminClient = createAdminSupabaseClient()
+  const isUuid = UUID_REGEX.test(key)
 
-  if (!host) {
+  const baseSelect = `
+    id,
+    slug,
+    title,
+    excerpt,
+    body_markdown,
+    status,
+    layout,
+    category,
+    priority,
+    funnel_id,
+    flow_step,
+    order_index
+  `
+
+  const { data: exactMatch, error: exactMatchError } = await adminClient
+    .from('content_pages')
+    .select(baseSelect)
+    .eq(isUuid ? 'id' : 'slug', key)
+    .maybeSingle()
+
+  if (exactMatchError) {
     throw new Error('Fehler beim Laden der Content-Page')
   }
 
-  const cookieStore = await cookies()
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((cookie) => `${cookie.name}=${cookie.value}`)
-    .join('; ')
+  if (exactMatch) {
+    return {
+      id: exactMatch.id,
+      title: exactMatch.title ?? '',
+      slug: exactMatch.slug ?? '',
+      excerpt: exactMatch.excerpt ?? '',
+      body_markdown: exactMatch.body_markdown ?? '',
+      status: exactMatch.status === 'published' ? 'published' : 'draft',
+      category: exactMatch.category ?? '',
+      priority: exactMatch.priority ?? 0,
+      funnel_id: exactMatch.funnel_id,
+      flow_step: exactMatch.flow_step,
+      order_index: exactMatch.order_index,
+      layout: exactMatch.layout,
+    } satisfies ContentPageEditorData
+  }
 
-  const url = new URL(`/api/admin/content-pages/${key}`, `${protocol}://${host}`)
-
-  const response = await fetch(url.toString(), {
-    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
-    cache: 'no-store',
-  })
-
-  if (response.status === 404) {
+  if (isUuid) {
     return null
   }
 
-  if (!response.ok) {
+  const { data: slugMatch, error: slugMatchError } = await adminClient
+    .from('content_pages')
+    .select(baseSelect)
+    .ilike('slug', key)
+    .limit(1)
+
+  if (slugMatchError) {
     throw new Error('Fehler beim Laden der Content-Page')
   }
 
-  const data = (await response.json()) as { contentPage?: ContentPageEditorData | null }
-  return data.contentPage ?? null
+  const row = Array.isArray(slugMatch) && slugMatch.length > 0 ? slugMatch[0] : null
+  if (!row) {
+    return null
+  }
+
+  return {
+    id: row.id,
+    title: row.title ?? '',
+    slug: row.slug ?? '',
+    excerpt: row.excerpt ?? '',
+    body_markdown: row.body_markdown ?? '',
+    status: row.status === 'published' ? 'published' : 'draft',
+    category: row.category ?? '',
+    priority: row.priority ?? 0,
+    funnel_id: row.funnel_id,
+    flow_step: row.flow_step,
+    order_index: row.order_index,
+    layout: row.layout,
+  } satisfies ContentPageEditorData
 }
 
 async function loadContentPage(rawKey: string) {
