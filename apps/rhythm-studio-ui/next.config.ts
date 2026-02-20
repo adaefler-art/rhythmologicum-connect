@@ -95,6 +95,14 @@ const nextConfig: NextConfig = {
         source: '/api/admin/safety-rules',
         destination: '/api/admin/safety-rules',
       },
+      {
+        source: '/api/admin/content-pages/:path*',
+        destination: '/api/admin/content-pages/:path*',
+      },
+      {
+        source: '/api/admin/content-pages',
+        destination: '/api/admin/content-pages',
+      },
     ]
     if (!engineBaseUrl) {
       return baseRules
