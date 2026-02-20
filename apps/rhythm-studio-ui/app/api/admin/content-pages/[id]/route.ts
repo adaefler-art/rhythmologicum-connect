@@ -308,6 +308,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 	}
 }
 
+export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+	return PATCH(request, context)
+}
+
 /**
  * F10 API Endpoint: Delete content page
  * DELETE /api/admin/content-pages/[id]

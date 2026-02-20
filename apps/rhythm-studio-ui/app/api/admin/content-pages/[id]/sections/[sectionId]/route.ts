@@ -60,6 +60,13 @@ export async function PATCH(
 	}
 }
 
+export async function POST(
+	request: NextRequest,
+	context: { params: Promise<{ id: string; sectionId: string }> },
+) {
+	return PATCH(request, context)
+}
+
 /**
  * F3 API Endpoint: Delete section
  * DELETE /api/admin/content-pages/[id]/sections/[sectionId]

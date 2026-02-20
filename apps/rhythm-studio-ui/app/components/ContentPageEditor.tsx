@@ -256,7 +256,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
           ? `/api/admin/content-pages/${pageId}`
           : '/api/admin/content-pages'
 
-      const method = mode === 'edit' ? 'PATCH' : 'POST'
+      const method = 'POST'
 
       const response = await fetch(url, {
         method,
@@ -371,12 +371,12 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
       // Swap order_index values
       const [res1, res2] = await Promise.all([
         fetch(`/api/admin/content-pages/${pageId}/sections/${section.id}`, {
-          method: 'PATCH',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order_index: prevSection.order_index }),
         }),
         fetch(`/api/admin/content-pages/${pageId}/sections/${prevSection.id}`, {
-          method: 'PATCH',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order_index: section.order_index }),
         }),
@@ -411,12 +411,12 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
       // Swap order_index values
       const [res1, res2] = await Promise.all([
         fetch(`/api/admin/content-pages/${pageId}/sections/${section.id}`, {
-          method: 'PATCH',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order_index: nextSection.order_index }),
         }),
         fetch(`/api/admin/content-pages/${pageId}/sections/${nextSection.id}`, {
-          method: 'PATCH',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order_index: section.order_index }),
         }),
@@ -443,7 +443,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
           .filter((section) => modifiedSections.has(section.id))
           .map((section) =>
             fetch(`/api/admin/content-pages/${pageId}/sections/${section.id}`, {
-              method: 'PATCH',
+              method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 title: section.title,
