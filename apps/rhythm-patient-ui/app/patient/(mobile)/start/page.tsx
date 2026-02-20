@@ -1,12 +1,84 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Card, Button } from '@/lib/ui/mobile-v2'
-import { MessageCircle, Shield, Clock, Heart, ChevronRight } from '@/lib/ui/mobile-v2/icons'
+import {
+  MessageCircle,
+  Shield,
+  Clock,
+  Heart,
+  ChevronRight,
+  ChevronLeft,
+} from '@/lib/ui/mobile-v2/icons'
 import { DashboardCards } from '@/components/patient/DashboardCards'
+import { useDashboardData } from '@/lib/hooks/useDashboardData'
+
+const CONTENT_SLIDER_FALLBACK_TEASER_IMAGE_SRC = '/mobile-v2/Dashboard.png'
+
+const CONTENT_SLIDER_TEASER_BY_SLUG: Record<string, string> = {
+  'stress-verstehen': '/mobile-v2/Assessment.png',
+  'resilienz-im-alltag': '/mobile-v2/PersonalScreen.png',
+  'schlaf-besser-werden': '/mobile-v2/Dialog.png',
+  'atemuebung-60-sekunden': '/mobile-v2/Assessment_Select.png',
+}
+
+function extractContentSlug(actionTarget: string | null): string | null {
+  if (!actionTarget) return null
+  const match = actionTarget.match(/^\/patient\/content\/([^/?#]+)/)
+  return match?.[1] ?? null
+}
+
+function getTeaserImageForActionTarget(actionTarget: string | null): string {
+  const slug = extractContentSlug(actionTarget)
+
+  if (slug && CONTENT_SLIDER_TEASER_BY_SLUG[slug]) {
+    return CONTENT_SLIDER_TEASER_BY_SLUG[slug]
+  }
+
+  if (!slug) {
+    return CONTENT_SLIDER_FALLBACK_TEASER_IMAGE_SRC
+  }
+
+  const fallbackImages = [
+    '/mobile-v2/Dashboard.png',
+    '/mobile-v2/Assessment.png',
+    '/mobile-v2/Assessment_Select.png',
+    '/mobile-v2/Dialog.png',
+    '/mobile-v2/PersonalScreen.png',
+  ]
+
+  const hash = slug.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  return fallbackImages[hash % fallbackImages.length] ?? CONTENT_SLIDER_FALLBACK_TEASER_IMAGE_SRC
+}
 
 export default function PatientEntryScreen() {
   const router = useRouter()
+  const { data: dashboardData } = useDashboardData()
+  const [activeContentIndex, setActiveContentIndex] = useState(0)
+
+  const contentTiles = useMemo(() => {
+    const tiles = dashboardData?.contentTiles ?? []
+    return tiles.filter((tile) => !!tile.actionTarget)
+  }, [dashboardData?.contentTiles])
+
+  useEffect(() => {
+    setActiveContentIndex(0)
+  }, [contentTiles.length])
+
+  const activeContentTile = contentTiles[activeContentIndex] ?? null
+  const activeContentTeaserImageSrc = getTeaserImageForActionTarget(activeContentTile?.actionTarget ?? null)
+
+  const goToPreviousContent = () => {
+    if (contentTiles.length <= 1) return
+    setActiveContentIndex((current) => (current === 0 ? contentTiles.length - 1 : current - 1))
+  }
+
+  const goToNextContent = () => {
+    if (contentTiles.length <= 1) return
+    setActiveContentIndex((current) => (current === contentTiles.length - 1 ? 0 : current + 1))
+  }
 
   return (
     <div className="w-full overflow-x-hidden bg-slate-50">
@@ -48,22 +120,97 @@ export default function PatientEntryScreen() {
           </Card>
 
           <Card className="border border-slate-200" padding="lg" shadow="sm">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-                <MessageCircle className="h-5 w-5" />
+            {activeContentTile ? (
+              <div className="space-y-4">
+                <div className="overflow-hidden rounded-xl border border-slate-200">
+                  <Image
+                    src={activeContentTeaserImageSrc}
+                    alt={`Teaserbild: ${activeContentTile.title}`}
+                    width={1200}
+                    height={675}
+                    className="h-36 w-full object-cover"
+                  />
+                </div>
+
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                      <MessageCircle className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-slate-900">Empfohlene Inhalte</p>
+                      <p className="text-sm font-medium text-slate-800">{activeContentTile.title}</p>
+                      {activeContentTile.description && (
+                        <p className="text-sm text-slate-600">{activeContentTile.description}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {contentTiles.length > 1 && (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={goToPreviousContent}
+                        icon={<ChevronLeft className="h-4 w-4" />}
+                      >
+                        Zurueck
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={goToNextContent}
+                        icon={<ChevronRight className="h-4 w-4" />}
+                        iconPosition="right"
+                      >
+                        Weiter
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  variant="secondary"
+                  size="md"
+                  fullWidth
+                  icon={<ChevronRight className="h-4 w-4" />}
+                  iconPosition="right"
+                  onClick={() => router.push(activeContentTile.actionTarget)}
+                >
+                  Inhalt oeffnen
+                </Button>
+
+                {contentTiles.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    {contentTiles.map((tile, index) => (
+                      <button
+                        key={tile.id}
+                        type="button"
+                        aria-label={`Inhalt ${index + 1} anzeigen`}
+                        onClick={() => setActiveContentIndex(index)}
+                        className={
+                          index === activeContentIndex
+                            ? 'h-2 w-6 rounded-md bg-slate-900'
+                            : 'h-2 w-2 rounded-md bg-slate-300'
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-900">Ihr Inhalt</p>
-                <p className="text-sm text-slate-600">
-                  Platzhalter fuer kuenftige Inhalte und Hinweise.
-                </p>
+            ) : (
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-slate-900">Empfohlene Inhalte</p>
+                  <p className="text-sm text-slate-600">
+                    Inhalte werden geladen oder sind aktuell nicht verfuegbar.
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="mt-5 flex items-center gap-2">
-              <span className="h-2 w-6 rounded-md bg-slate-900" />
-              <span className="h-2 w-2 rounded-md bg-slate-300" />
-              <span className="h-2 w-2 rounded-md bg-slate-300" />
-            </div>
+            )}
           </Card>
 
           <Card className="border border-slate-200" padding="lg" shadow="sm">
