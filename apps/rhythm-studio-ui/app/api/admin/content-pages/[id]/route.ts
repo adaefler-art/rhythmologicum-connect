@@ -66,6 +66,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 		;({ data: contentPage, error: pageError } = await contentPageQuery.maybeSingle())
 
+		if (!contentPage && !pageError && !isUuid) {
+			const { data: fallbackBySlug, error: fallbackSlugError } = await adminClient
+				.from('content_pages')
+				.select(baseSelect)
+				.ilike('slug', key)
+				.limit(1)
+
+			if (fallbackSlugError) {
+				pageError = fallbackSlugError
+			} else if (Array.isArray(fallbackBySlug) && fallbackBySlug.length > 0) {
+				contentPage = fallbackBySlug[0]
+			}
+		}
+
 		if (pageError && pageError.code === '42703') {
 			// deleted_at column missing, retry without it
 			const fallbackSelect = `
@@ -89,6 +103,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 				.select(fallbackSelect)
 				.eq(isUuid ? 'id' : 'slug', key)
 				.maybeSingle())
+
+			if (!contentPage && !pageError && !isUuid) {
+				const { data: fallbackBySlug, error: fallbackSlugError } = await adminClient
+					.from('content_pages')
+					.select(fallbackSelect)
+					.ilike('slug', key)
+					.limit(1)
+
+				if (fallbackSlugError) {
+					pageError = fallbackSlugError
+				} else if (Array.isArray(fallbackBySlug) && fallbackBySlug.length > 0) {
+					contentPage = fallbackBySlug[0]
+				}
+			}
 		}
 
 		if (pageError) {

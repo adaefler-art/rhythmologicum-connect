@@ -177,8 +177,7 @@ export default function AdminContentDashboard() {
   }
 
   const handlePageClick = (page: ContentPage) => {
-    const key = (page.slug ?? page.id).trim()
-    router.push(`/admin/content/${encodeURIComponent(key)}`)
+    router.push(`/admin/content/${encodeURIComponent(page.id)}`)
   }
 
   const handleNewPage = () => {
