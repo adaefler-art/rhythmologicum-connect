@@ -469,6 +469,15 @@ export const getClinicalIntakeLatest = (patientId: string) =>
                 status?: 'captured' | 'missing' | 'unclear' | 'delegated_to_physician'
               }>
               open_loop_count?: number
+              latest_correction?: {
+                id?: string
+                created_at?: string
+                type?: string
+                source_context?: string
+                message_excerpt?: string | null
+                answer_classification?: string | null
+                asked_question_id?: string | null
+              } | null
             }
           })
         | null

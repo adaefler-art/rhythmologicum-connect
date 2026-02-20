@@ -46,6 +46,15 @@ type CaseChecklistSnapshot = {
   }>
   open_loop_count: number
   status_counts: Record<CaseChecklistStatus, number>
+  latest_correction: {
+    id: string
+    created_at: string
+    type: string
+    source_context: string
+    message_excerpt: string | null
+    answer_classification: string | null
+    asked_question_id: string | null
+  } | null
 }
 
 type IntakeResponse = {
@@ -94,11 +103,52 @@ const buildCaseChecklistSnapshot = (
     statusCounts[entry.status] += 1
   })
 
+  const followup = structuredData?.followup
+  const followupRecord =
+    followup && typeof followup === 'object' && !Array.isArray(followup)
+      ? (followup as Record<string, unknown>)
+      : null
+
+  const correctionJournalRaw = Array.isArray(followupRecord?.correction_journal)
+    ? followupRecord.correction_journal
+    : []
+
+  const correctionJournal = correctionJournalRaw
+    .filter((entry) => entry && typeof entry === 'object' && !Array.isArray(entry))
+    .map((entry) => {
+      const record = entry as Record<string, unknown>
+      return {
+        id: typeof record.id === 'string' ? record.id : '',
+        created_at: typeof record.created_at === 'string' ? record.created_at : '',
+        type: typeof record.type === 'string' ? record.type : '',
+        source_context: typeof record.source_context === 'string' ? record.source_context : '',
+        message_excerpt:
+          typeof record.message_excerpt === 'string' ? record.message_excerpt : null,
+        answer_classification:
+          typeof record.answer_classification === 'string'
+            ? record.answer_classification
+            : null,
+        asked_question_id:
+          typeof record.asked_question_id === 'string' ? record.asked_question_id : null,
+      }
+    })
+    .filter((entry) => entry.id && entry.created_at && entry.type && entry.source_context)
+
+  const latestCorrection = correctionJournal
+    .slice()
+    .sort((left, right) => {
+      const leftTime = Date.parse(left.created_at)
+      const rightTime = Date.parse(right.created_at)
+      if (Number.isNaN(leftTime) || Number.isNaN(rightTime)) return 0
+      return rightTime - leftTime
+    })[0] ?? null
+
   return {
     entries,
     open_loop_count:
       statusCounts.missing + statusCounts.unclear + statusCounts.delegated_to_physician,
     status_counts: statusCounts,
+    latest_correction: latestCorrection,
   }
 }
 

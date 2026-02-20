@@ -131,6 +131,21 @@ const getChecklistBadgeLabel = (status: CaseChecklistStatus) => {
   return 'unclear'
 }
 
+const getCorrectionTypeLabel = (value?: string | null) => {
+  if (value === 'medication_missing') return 'Medikation ergänzt'
+  if (value === 'medication_incorrect') return 'Medikation korrigiert'
+  if (value === 'history_missing') return 'Vorerkrankung ergänzt'
+  if (value === 'symptom_timeline') return 'Verlauf korrigiert'
+  if (value === 'free_text') return 'Freitext-Korrektur'
+  return 'Korrektur'
+}
+
+const getCorrectionSourceLabel = (value?: string | null) => {
+  if (value === 'status_page') return 'Statusseite'
+  if (value === 'followup') return 'Follow-up'
+  return 'Chat'
+}
+
 const isReviewStatus = (
   value: unknown,
 ): value is ClinicalIntakeReviewRecord['status'] =>
@@ -1131,6 +1146,45 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
           structuredIntakeData as Record<string, unknown> | null,
         )
 
+  const latestCorrection =
+    (latestClinicalIntake as {
+      case_checklist?: {
+        latest_correction?: {
+          id?: unknown
+          created_at?: unknown
+          type?: unknown
+          source_context?: unknown
+          message_excerpt?: unknown
+          answer_classification?: unknown
+          asked_question_id?: unknown
+        } | null
+      }
+    } | null)?.case_checklist?.latest_correction ?? null
+
+  const normalizedLatestCorrection =
+    latestCorrection &&
+    typeof latestCorrection === 'object' &&
+    !Array.isArray(latestCorrection) &&
+    typeof latestCorrection.id === 'string' &&
+    typeof latestCorrection.created_at === 'string' &&
+    typeof latestCorrection.type === 'string' &&
+    typeof latestCorrection.source_context === 'string'
+      ? {
+          id: latestCorrection.id,
+          createdAt: latestCorrection.created_at,
+          type: latestCorrection.type,
+          sourceContext: latestCorrection.source_context,
+          messageExcerpt:
+            typeof latestCorrection.message_excerpt === 'string'
+              ? latestCorrection.message_excerpt
+              : null,
+          answerClassification:
+            typeof latestCorrection.answer_classification === 'string'
+              ? latestCorrection.answer_classification
+              : null,
+        }
+      : null
+
   const appendRequestedItem = (value: string) => {
     const current = requestedItemsText
       .split(/\n|,/)
@@ -1380,6 +1434,27 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                           </div>
                         ))}
                       </div>
+
+                      {normalizedLatestCorrection && (
+                        <div className="mt-3 rounded border border-blue-100 bg-blue-50 p-2">
+                          <p className="text-xs font-semibold text-blue-800">Neueste Patient:innen-Korrektur</p>
+                          <p className="mt-1 text-xs text-blue-700">
+                            {getCorrectionTypeLabel(normalizedLatestCorrection.type)} ·{' '}
+                            {getCorrectionSourceLabel(normalizedLatestCorrection.sourceContext)} ·{' '}
+                            {formatDate(normalizedLatestCorrection.createdAt)}
+                          </p>
+                          {normalizedLatestCorrection.answerClassification ? (
+                            <p className="mt-1 text-xs text-blue-700">
+                              Klassifikation: {normalizedLatestCorrection.answerClassification}
+                            </p>
+                          ) : null}
+                          {normalizedLatestCorrection.messageExcerpt ? (
+                            <p className="mt-1 text-xs text-blue-700">
+                              „{normalizedLatestCorrection.messageExcerpt}“
+                            </p>
+                          ) : null}
+                        </div>
+                      )}
                     </div>
                   )}
 

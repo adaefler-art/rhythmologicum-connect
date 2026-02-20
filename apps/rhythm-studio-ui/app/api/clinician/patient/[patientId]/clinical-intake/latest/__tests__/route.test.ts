@@ -98,6 +98,24 @@ describe('GET /api/clinician/patient/[patientId]/clinical-intake/latest', () => 
                       status: 'resolved',
                     },
                   ],
+                  correction_journal: [
+                    {
+                      id: 'corr-1',
+                      created_at: '2026-02-19T08:02:00.000Z',
+                      type: 'free_text',
+                      source_context: 'chat',
+                      message_excerpt: 'Bitte korrigieren Sie den Verlauf.',
+                    },
+                    {
+                      id: 'corr-2',
+                      created_at: '2026-02-19T08:04:00.000Z',
+                      type: 'medication_missing',
+                      source_context: 'status_page',
+                      message_excerpt: 'Ich habe Metoprolol vergessen.',
+                      answer_classification: 'answered',
+                      asked_question_id: 'gap:medication',
+                    },
+                  ],
                 },
               },
               policy_override: null,
@@ -191,6 +209,15 @@ describe('GET /api/clinician/patient/[patientId]/clinical-intake/latest', () => 
         missing: 1,
         unclear: 1,
         delegated_to_physician: 1,
+      },
+      latest_correction: {
+        id: 'corr-2',
+        created_at: '2026-02-19T08:04:00.000Z',
+        type: 'medication_missing',
+        source_context: 'status_page',
+        message_excerpt: 'Ich habe Metoprolol vergessen.',
+        answer_classification: 'answered',
+        asked_question_id: 'gap:medication',
       },
     })
   })
@@ -304,6 +331,7 @@ describe('GET /api/clinician/patient/[patientId]/clinical-intake/latest', () => 
         unclear: 0,
         delegated_to_physician: 0,
       },
+      latest_correction: null,
     })
   })
 })
