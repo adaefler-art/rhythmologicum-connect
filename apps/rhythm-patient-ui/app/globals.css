@@ -59,12 +59,12 @@
    * BORDER RADIUS TOKENS
    * ======================================== */
   --radius-none: 0;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
-  --radius-full: 9999px;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-full: 0;
   
   /* ========================================
    * SHADOW TOKENS
@@ -319,7 +319,7 @@ body {
 .dashboard-card {
   width: 100%;
   border: 1px solid var(--color-neutral-200);
-  border-radius: 0.75rem;
+  border-radius: 0;
   background-color: var(--color-bg-light);
   padding: 1rem;
   box-sizing: border-box;
@@ -334,7 +334,7 @@ body {
 .settings-card {
   width: 100%;
   border: 1px solid var(--color-neutral-200);
-  border-radius: 0.75rem;
+  border-radius: 0;
   background-color: var(--color-bg-light);
   padding: 1rem;
   box-sizing: border-box;
@@ -352,7 +352,7 @@ input:not([type="checkbox"]):not([type="radio"]),
 textarea,
 select {
   /* Default border styling */
-  border-radius: 0.5rem; /* rounded-lg */
+  border-radius: 0;
   /* Prevent dark mode from affecting form fields inappropriately */
   -webkit-appearance: none;
   -moz-appearance: none;
