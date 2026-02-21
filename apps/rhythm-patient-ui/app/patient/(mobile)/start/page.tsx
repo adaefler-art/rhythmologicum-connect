@@ -52,33 +52,86 @@ function getTeaserImageForActionTarget(actionTarget: string | null): string {
   return fallbackImages[hash % fallbackImages.length] ?? CONTENT_SLIDER_FALLBACK_TEASER_IMAGE_SRC
 }
 
+const NEXT_IMAGE_PROXY_PATH = '/_next/image'
+
+function isNextImageProxyUrl(value: string): boolean {
+  try {
+    if (value.startsWith('/')) {
+      const parsedRelative = new URL(value, 'https://local.invalid')
+      return parsedRelative.pathname === NEXT_IMAGE_PROXY_PATH
+    }
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      const parsedAbsolute = new URL(value)
+      return parsedAbsolute.pathname === NEXT_IMAGE_PROXY_PATH
+    }
+  } catch {
+    return false
+  }
+
+  return false
+}
+
+function unwrapNextImageProxyUrl(value: string): string {
+  let candidate = value.trim()
+
+  for (let depth = 0; depth < 3; depth += 1) {
+    if (!isNextImageProxyUrl(candidate)) {
+      break
+    }
+
+    try {
+      const parsed = candidate.startsWith('/')
+        ? new URL(candidate, 'https://local.invalid')
+        : new URL(candidate)
+
+      const nested = parsed.searchParams.get('url')?.trim()
+      if (!nested) {
+        break
+      }
+
+      const decoded = decodeURIComponent(nested)
+      if (!decoded || decoded === candidate) {
+        break
+      }
+
+      candidate = decoded
+    } catch {
+      break
+    }
+  }
+
+  return candidate
+}
+
 function resolveTeaserImage(actionTarget: string | null, teaserImageUrl?: string | null): string {
   const trimmedTeaser = teaserImageUrl?.trim()
   if (trimmedTeaser) {
-    if (trimmedTeaser.startsWith('http://') || trimmedTeaser.startsWith('https://')) {
-      return encodeURI(trimmedTeaser)
+    let normalizedTeaser = unwrapNextImageProxyUrl(trimmedTeaser)
+
+    if (/^!\[[^\]]*\]\(([^)]+)\)$/u.test(normalizedTeaser)) {
+      normalizedTeaser = normalizedTeaser.replace(/^!\[[^\]]*\]\(([^)]+)\)$/u, '$1').trim()
     }
 
-    if (trimmedTeaser.startsWith('/')) {
-      return encodeURI(trimmedTeaser)
+    normalizedTeaser = unwrapNextImageProxyUrl(normalizedTeaser)
+
+    if (isNextImageProxyUrl(normalizedTeaser)) {
+      return getTeaserImageForActionTarget(actionTarget)
     }
 
-    if (trimmedTeaser.startsWith('images/')) {
-      return encodeURI(`/${trimmedTeaser}`)
+    if (normalizedTeaser.startsWith('http://') || normalizedTeaser.startsWith('https://')) {
+      return encodeURI(normalizedTeaser)
     }
 
-    if (/^!\[[^\]]*\]\(([^)]+)\)$/u.test(trimmedTeaser)) {
-      const extracted = trimmedTeaser.replace(/^!\[[^\]]*\]\(([^)]+)\)$/u, '$1').trim()
-      if (extracted.startsWith('/')) {
-        return encodeURI(extracted)
-      }
-      if (extracted.startsWith('images/')) {
-        return encodeURI(`/${extracted}`)
-      }
-      return encodeURI(extracted)
+    if (normalizedTeaser.startsWith('/')) {
+      return encodeURI(normalizedTeaser)
     }
 
-    return encodeURI(trimmedTeaser)
+    if (normalizedTeaser.startsWith('images/')) {
+      return encodeURI(`/${normalizedTeaser}`)
+    }
+
+    return encodeURI(normalizedTeaser)
   }
 
   return getTeaserImageForActionTarget(actionTarget)
