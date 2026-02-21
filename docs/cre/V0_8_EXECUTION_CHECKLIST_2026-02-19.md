@@ -11,6 +11,8 @@ Referenzen:
 - `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`
 - `docs/cre/ROLLOUT_USE_CASE_PLAN_2026-02-17.md`
 - `docs/cre/UC1_MANUAL_TEST_CATCHUP_RUNBOOK_2026-02-19.md`
+- `docs/cre/CONTENT_CMS_ARCHITECTURE_2026-02-21.md`
+- `docs/cre/CMS_EPIC_ISSUES_2026-02-21.md`
 
 Statuswerte:
 - [ ] offen
@@ -194,6 +196,31 @@ In v0.9+ verschieben (Backlog, kein v0.8 Gate):
 2. [ ] NV2/NV3 offene Manual-Gates schließen
 3. [ ] UC2 Trigger-Engine produktionsnah verifizieren
 4. [ ] NV5 Entscheidungsfähigkeit absichern (Go/No-Go vorbereitet)
+5. [~] CMS-Epic (Headless + Block-Renderer + Workflow) starten
+
+---
+
+## 8) EPIC — Headless CMS für patient-facing Contentseiten
+
+Ziel:
+- Redaktionelle Inhaltsseiten (z. B. „Was ist Stress?", Schlafhygiene, Auszeichnungen) ohne Deploy pflegen.
+- Designsystem-Konsistenz und Sicherheit (kein freies Roh-HTML) garantieren.
+
+Definition of Done:
+- [ ] Block-Schema v1 (`hero`, `rich_text`, `image`, `badge`, `cta`) als Contract dokumentiert und umgesetzt
+- [ ] Patient-Contentseite rendert Block-First mit Markdown-Fallback rückwärtskompatibel
+- [ ] Headless CMS angebunden (Webhook/Sync oder API Pull) inkl. Preview/Publish-Flow
+- [ ] Rollen-/Freigabeworkflow (`draft` -> `review` -> `published` -> `archived`) aktiv
+- [ ] Smoke-/Security-Checks für Content (`draft`/`published`/`404`/XSS) dokumentiert und bestanden
+
+Arbeitspakete (Issue-Mapping):
+- [ ] CMS-E1-01 Block Contract v1 + Typen (siehe `docs/cre/CMS_EPIC_ISSUES_2026-02-21.md`)
+- [ ] CMS-E1-02 Block-Renderer v1 in Patient UI
+- [ ] CMS-E1-03 Resolver/API auf `blocks` erweitern
+- [ ] CMS-E1-04 Headless CMS Auswahl + Betriebsentscheidung (Payload vs SaaS)
+- [ ] CMS-E1-05 CMS Integration (Sync/Webhook + Preview)
+- [ ] CMS-E1-06 Editorial Workflow + Rollen + Audit
+- [ ] CMS-E1-07 QA/Security/Monitoring für Content-Pipeline
 
 ---
 
@@ -236,6 +263,8 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-20: iOS-Shell-Tab-Verhalten korrigiert: `Status` bleibt als aktiver Tab selektiert (kein Auto-Sprung auf `Start`) und Light Mode app-weit erzwungen für konsistente UI (`apps/rhythm-patient-ios/ios/App/App/AppDelegate.swift`, `apps/rhythm-patient-ios/README.md`).
 - 2026-02-20: Status-Polish + Correction-Trace ergänzt: leere Statuszustände und letzte Korrektur auf `/patient/status` sichtbar; Follow-up-Generate persistiert strukturierte Korrekturmetadaten (`correction_type`, `correction_source_context`, `correction_journal`) inkl. Telemetrie-Payload für Review/Clinician-Nachvollziehbarkeit (`apps/rhythm-patient-ui/app/patient/(mobile)/status/client.tsx`, `apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx`, `apps/rhythm-patient-ui/app/api/patient/followup/generate/route.ts`, `lib/cre/followup/schema.ts`, `lib/types/clinicalIntake.ts`).
 - 2026-02-20: Clinician-Intake-Snapshot erweitert: API `clinical-intake/latest` liefert `case_checklist.latest_correction` aus `followup.correction_journal`; Anamnesis-Review zeigt den neuesten Korrekturhinweis direkt neben der Case-Checklist, inkl. API-Regressionstest (`apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/latest/route.ts`, `apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/latest/__tests__/route.test.ts`, `apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx`, `apps/rhythm-studio-ui/lib/fetchClinician.ts`).
+- 2026-02-21: Content/CMS-Zielarchitektur für patient-facing Inhaltsseiten dokumentiert (Build-vs-Buy-Entscheidung, Block-Renderer-Ansatz, Migrationspfad) (`docs/cre/CONTENT_CMS_ARCHITECTURE_2026-02-21.md`).
+- 2026-02-21: Headless-CMS-Epic in v0.8-Execution-Checklist aufgenommen inkl. priorisiertem Arbeitspaket und Issue-Mapping (`docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-19.md`, `docs/cre/CMS_EPIC_ISSUES_2026-02-21.md`).
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).
