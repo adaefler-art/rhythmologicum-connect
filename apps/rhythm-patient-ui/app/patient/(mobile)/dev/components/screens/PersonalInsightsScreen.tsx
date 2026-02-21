@@ -129,7 +129,7 @@ export default function PersonalInsightsScreen() {
           <div className="space-y-3">
             <Card padding="md">
               <div className="flex items-start gap-3">
-                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[#dcfce7]">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#dcfce7]">
                   <span className="text-2xl">🏆</span>
                 </div>
                 <div className="flex-1">
@@ -143,7 +143,7 @@ export default function PersonalInsightsScreen() {
 
             <Card padding="md">
               <div className="flex items-start gap-3">
-                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[#dbeafe]">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#dbeafe]">
                   <span className="text-2xl">🎯</span>
                 </div>
                 <div className="flex-1">
@@ -157,7 +157,7 @@ export default function PersonalInsightsScreen() {
 
             <Card padding="md">
               <div className="flex items-start gap-3">
-                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[#fef9c3]">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#fef9c3]">
                   <span className="text-2xl">⭐</span>
                 </div>
                 <div className="flex-1">

@@ -12,7 +12,7 @@ export function AssessmentCard({ assessment, onClick }: AssessmentCardProps) {
   return (
     <Card padding="lg" shadow="sm" onClick={onClick} hover>
       <div className="flex items-start gap-4">
-        <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${assessment.iconBgColor}`}>
+        <div className={`flex items-center justify-center w-12 h-12 rounded-full ${assessment.iconBgColor}`}>
           <span className="text-2xl">{assessment.icon}</span>
         </div>
         

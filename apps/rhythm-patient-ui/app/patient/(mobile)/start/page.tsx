@@ -252,7 +252,7 @@ export default function PatientEntryScreen() {
           <Card className="border border-sky-200 bg-sky-50" padding="lg" shadow="sm">
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sky-700">
                   <MessageCircle className="h-5 w-5" />
                 </div>
                 <div className="space-y-1">
@@ -355,7 +355,7 @@ export default function PatientEntryScreen() {
               </div>
             ) : (
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sky-700">
                   <MessageCircle className="h-5 w-5" />
                 </div>
                 <div className="space-y-1">
@@ -373,7 +373,7 @@ export default function PatientEntryScreen() {
           <Card className="border border-slate-200" padding="lg" shadow="sm">
             <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-700">
                   <Clock className="h-5 w-5" />
                 </div>
                 <div className="space-y-1">
@@ -400,7 +400,7 @@ export default function PatientEntryScreen() {
           <Card className="border border-slate-200" padding="lg" shadow="sm">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                   <MessageCircle className="h-5 w-5" />
                 </div>
                 <div>

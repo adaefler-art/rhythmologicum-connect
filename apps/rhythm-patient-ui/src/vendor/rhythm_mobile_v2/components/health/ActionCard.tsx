@@ -33,7 +33,7 @@ export function ActionCard({ action, onAction }: ActionCardProps) {
   return (
     <Card padding="md" shadow="sm" hover>
       <div className="flex items-start gap-3 mb-3">
-        <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${action.iconBgColor}`}>
+        <div className={`flex items-center justify-center w-10 h-10 rounded-full ${action.iconBgColor}`}>
           <span className={action.iconColor}>
             {getIcon()}
           </span>

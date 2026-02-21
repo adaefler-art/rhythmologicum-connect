@@ -13,7 +13,7 @@ export function AppointmentCard({ appointment, onClick }: AppointmentCardProps) 
   return (
     <Card padding="md" shadow="sm" hover onClick={onClick}>
       <div className="flex items-start gap-3">
-        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#fef9c3]">
+        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#fef9c3]">
           <Calendar className="w-5 h-5 text-[#eab308]" />
         </div>
         

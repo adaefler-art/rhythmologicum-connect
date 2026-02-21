@@ -29,7 +29,7 @@ export function QuickAction({
       onClick={onClick}
     >
       <div className="flex items-center gap-3">
-        <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${iconBg}`}>
+        <div className={`flex items-center justify-center w-10 h-10 rounded-full ${iconBg}`}>
           <span className={iconColor}>{icon}</span>
         </div>
         

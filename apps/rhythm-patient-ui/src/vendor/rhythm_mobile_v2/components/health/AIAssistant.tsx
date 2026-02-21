@@ -12,7 +12,7 @@ export function AIAssistant({ onChatNow }: AIAssistantProps) {
   return (
     <Card padding="md" shadow="md" className="bg-gradient-to-r from-[#4a90e2] to-[#6c63ff]">
       <div className="flex items-start gap-3">
-        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm">
+        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm">
           <Bot className="w-6 h-6 text-white" />
         </div>
         

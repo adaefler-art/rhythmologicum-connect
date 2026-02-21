@@ -39,7 +39,7 @@ export function Radio({
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-md'}`}
     >
       {icon && (
-        <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${iconBg}`}>
+        <div className={`flex items-center justify-center w-12 h-12 rounded-full ${iconBg}`}>
           {icon}
         </div>
       )}
