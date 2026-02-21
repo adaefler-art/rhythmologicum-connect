@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Card, Button } from '@/lib/ui/mobile-v2'
 import {
@@ -293,15 +292,15 @@ export default function PatientEntryScreen() {
                   }}
                   className="relative cursor-pointer overflow-hidden rounded-xl border border-slate-200"
                 >
-                  <Image
+                  <img
                     src={activeContentTeaserImageSrc}
                     alt={`Teaserbild: ${activeContentTile.title}`}
-                    width={1200}
-                    height={675}
                     className="h-56 w-full object-contain bg-slate-100"
                     onError={() => {
                       setFailedImageSources((current) => ({ ...current, [resolvedActiveContentTeaserImageSrc]: true }))
                     }}
+                    loading="lazy"
+                    decoding="async"
                   />
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
