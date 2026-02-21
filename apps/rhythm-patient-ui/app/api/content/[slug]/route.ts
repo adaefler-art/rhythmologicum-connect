@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import type { ContentPage } from '@/lib/types/content'
+import { withValidatedContentBlocks } from '@/lib/utils/contentBlocks'
 
 /**
  * E73.7: Patient Content API - Published Content Only
@@ -50,32 +52,61 @@ export async function GET(
 
     // Fetch content page - ONLY if published and not deleted
     // Deterministic 404: no fallback to draft/archived
-    const { data: contentPage, error: pageError } = await supabase
-      .from('content_pages')
-      .select(
-        `
-        id,
-        slug,
-        title,
-        excerpt,
-        body_markdown,
-        status,
-        layout,
-        category,
-        priority,
-        funnel_id,
-        flow_step,
-        order_index,
-        seo_title,
-        seo_description,
-        created_at,
-        updated_at
-      `,
-      )
-      .eq('slug', slug)
-      .eq('status', 'published')
-      .is('deleted_at', null)
-      .single()
+    const selectWithBlocks = `
+      id,
+      slug,
+      title,
+      excerpt,
+      body_markdown,
+      blocks,
+      status,
+      layout,
+      category,
+      priority,
+      funnel_id,
+      flow_step,
+      order_index,
+      seo_title,
+      seo_description,
+      created_at,
+      updated_at
+    `
+
+    const selectWithoutBlocks = `
+      id,
+      slug,
+      title,
+      excerpt,
+      body_markdown,
+      status,
+      layout,
+      category,
+      priority,
+      funnel_id,
+      flow_step,
+      order_index,
+      seo_title,
+      seo_description,
+      created_at,
+      updated_at
+    `
+
+    const fetchPage = async (fields: string) =>
+      supabase
+        .from('content_pages')
+        .select(fields)
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .is('deleted_at', null)
+        .single()
+
+    let { data: contentPage, error: pageError } = await fetchPage(selectWithBlocks)
+
+    if (pageError?.code === '42703') {
+      const fallback = await fetchPage(selectWithoutBlocks)
+      contentPage = fallback.data
+      pageError = fallback.error
+    }
 
     // Deterministic 404 - no fallback logic
     if (pageError || !contentPage) {
@@ -101,18 +132,20 @@ export async function GET(
       )
     }
 
+    const normalizedContentPage = withValidatedContentBlocks(contentPage as unknown as ContentPage)
+
     // Success: return published content
     console.log('[E73.7] Content served:', {
       slug,
       userId: user.id,
-      contentId: contentPage.id,
-      status: contentPage.status,
+      contentId: normalizedContentPage.id,
+      status: normalizedContentPage.status,
     })
 
     return NextResponse.json(
       {
         success: true,
-        data: contentPage,
+        data: normalizedContentPage,
       },
       {
         headers: {

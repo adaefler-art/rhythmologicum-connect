@@ -29,9 +29,9 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
 
 | ID | Titel | Prio | Aufwand | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
-| CMS-E1-01 | Block-Contract v1 + Content-Typen | P0 | S-M | todo | - |
-| CMS-E1-02 | Patient Block-Renderer v1 (Block-First) | P0 | M | todo | CMS-E1-01 |
-| CMS-E1-03 | Resolver/API um `blocks` erweitern | P0 | M | todo | CMS-E1-01 |
+| CMS-E1-01 | Block-Contract v1 + Content-Typen | P0 | S-M | done | - |
+| CMS-E1-02 | Patient Block-Renderer v1 (Block-First) | P0 | M | in_progress | CMS-E1-01 |
+| CMS-E1-03 | Resolver/API um `blocks` erweitern | P0 | M | in_progress | CMS-E1-01 |
 | CMS-E1-04 | CMS-Plattformentscheidung (Payload vs SaaS) | P1 | S | todo | CMS-E1-01 |
 | CMS-E1-05 | CMS-Integration (Sync/Webhook + Preview) | P1 | M-L | todo | CMS-E1-02, CMS-E1-03, CMS-E1-04 |
 | CMS-E1-06 | Editorial Workflow + Rollen + Audit | P1 | M | todo | CMS-E1-05 |
@@ -41,43 +41,43 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
 
 ## Detaillierte Issues (abarbeitbar)
 
-### [ ] CMS-E1-01 — Block-Contract v1 + Content-Typen
-- **Status**: todo
+### [x] CMS-E1-01 — Block-Contract v1 + Content-Typen
+- **Status**: done
 - **Owner**: Backend + Patient UI
 - **Ziel**: Einheitliches Block-Schema für CMS und Frontend-Renderer schaffen.
 - **Tasks**:
-  - [ ] Block-Schema v1 dokumentieren (`hero`, `rich_text`, `image`, `badge`, `cta`)
-  - [ ] `ContentPage`-Typen um optionales `blocks`-Feld erweitern (backward-compatible)
-  - [ ] JSON-Schema/Validator für Block-Payload ergänzen
+  - [x] Block-Schema v1 dokumentieren (`hero`, `rich_text`, `image`, `badge`, `cta`)
+  - [x] `ContentPage`-Typen um optionales `blocks`-Feld erweitern (backward-compatible)
+  - [x] JSON-Schema/Validator für Block-Payload ergänzen
 - **Akzeptanzkriterien**:
-  - [ ] Schema-Dokument liegt versioniert in `docs/cre`
-  - [ ] Typen in App und API kompilieren ohne Breaking Changes
-  - [ ] Ungültige Blocktypen werden technisch abgefangen
+  - [x] Schema-Dokument liegt versioniert in `docs/cre`
+  - [x] Typen in App und API kompilieren ohne Breaking Changes
+  - [x] Ungültige Blocktypen werden technisch abgefangen
 
-### [ ] CMS-E1-02 — Patient Block-Renderer v1 (Block-First)
-- **Status**: todo
+### [~] CMS-E1-02 — Patient Block-Renderer v1 (Block-First)
+- **Status**: in_progress
 - **Owner**: Patient UI
 - **Ziel**: Contentseiten rendern primär aus `blocks[]`, mit `body_markdown` als Fallback.
 - **Tasks**:
-  - [ ] `ContentBlockRenderer`-Entry mit Allowlist-Blocktypen implementieren
-  - [ ] Route `/patient/content/[slug]` auf Block-First umstellen
-  - [ ] Bestehendes Markdown-Rendering als kompatibler Fallback erhalten
+  - [x] `ContentBlockRenderer`-Entry mit Allowlist-Blocktypen implementieren
+  - [x] Route `/patient/content/[slug]` auf Block-First umstellen
+  - [x] Bestehendes Markdown-Rendering als kompatibler Fallback erhalten
 - **Akzeptanzkriterien**:
-  - [ ] Seiten mit `blocks[]` rendern korrekt auf Mobile/Desktop
-  - [ ] Seiten ohne `blocks[]` funktionieren unverändert
-  - [ ] Keine freie HTML-Ausführung im Renderer möglich
+  - [x] Seiten mit `blocks[]` rendern korrekt auf Mobile/Desktop
+  - [x] Seiten ohne `blocks[]` funktionieren unverändert
+  - [x] Keine freie HTML-Ausführung im Renderer möglich
 
-### [ ] CMS-E1-03 — Resolver/API um `blocks` erweitern
-- **Status**: todo
+### [~] CMS-E1-03 — Resolver/API um `blocks` erweitern
+- **Status**: in_progress
 - **Owner**: Backend
 - **Ziel**: Resolver und API liefern Block-Daten konsistent aus.
 - **Tasks**:
-  - [ ] `content_pages` Read-Pfade um `blocks` (oder referenzierte Block-Struktur) erweitern
-  - [ ] Resolver-Kontrakt (`getContentPage`) für Block-Ausgabe anpassen
-  - [ ] Fehler-/Fallback-Verhalten für fehlende/inkonsistente Blockdaten ergänzen
+  - [x] `content_pages` Read-Pfade um `blocks` (oder referenzierte Block-Struktur) erweitern
+  - [x] Resolver-Kontrakt (`getContentPage`) für Block-Ausgabe anpassen
+  - [x] Fehler-/Fallback-Verhalten für fehlende/inkonsistente Blockdaten ergänzen
 - **Akzeptanzkriterien**:
-  - [ ] API liefert `blocks` für veröffentlichte Seiten deterministisch
-  - [ ] 404-/Fallback-Logik bleibt konsistent
+  - [x] API liefert `blocks` für veröffentlichte Seiten deterministisch
+  - [x] 404-/Fallback-Logik bleibt konsistent
   - [ ] Keine Regression in `content-slider` und Slug-Routen
 
 ### [ ] CMS-E1-04 — CMS-Plattformentscheidung (Payload vs SaaS)

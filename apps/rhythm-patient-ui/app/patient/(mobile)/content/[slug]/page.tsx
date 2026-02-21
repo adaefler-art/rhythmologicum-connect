@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import type { ContentPage } from '@/lib/types/content'
 import { DEFAULT_PATIENT_FUNNEL } from '@/lib/config/funnelAllowlist'
 import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
+import { withValidatedContentBlocks } from '@/lib/utils/contentBlocks'
 import { getContentPage } from '@/lib/utils/contentResolver'
 import ContentPageClient from './client'
 
@@ -145,7 +146,7 @@ export default async function ContentPage({ params, searchParams }: PageProps) {
       }
 
       if (byIdContent) {
-        return <ContentPageClient contentPage={byIdContent as ContentPage} />
+        return <ContentPageClient contentPage={withValidatedContentBlocks(byIdContent as ContentPage)} />
       }
     }
 
@@ -170,7 +171,7 @@ export default async function ContentPage({ params, searchParams }: PageProps) {
     }
 
     if (exactContent) {
-      return <ContentPageClient contentPage={exactContent as ContentPage} />
+      return <ContentPageClient contentPage={withValidatedContentBlocks(exactContent as ContentPage)} />
     }
 
     const resolverSlug = slugCandidates[0] ?? rawSlug
@@ -187,7 +188,7 @@ export default async function ContentPage({ params, searchParams }: PageProps) {
       return <ContentNotFoundState slug={rawSlug} funnel={funnel} />
     }
 
-    const contentPage = result.page as ContentPage
+    const contentPage = withValidatedContentBlocks(result.page as ContentPage)
     console.log('[CONTENT_PAGE] Content page loaded successfully', {
       slug: rawSlug,
       funnel,

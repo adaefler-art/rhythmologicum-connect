@@ -10,6 +10,8 @@
  * - Deterministic 404 handling
  */
 
+import { type ContentBlock } from '@/lib/contracts/contentBlocks'
+
 export type ContentPageData = {
   id: string
   slug: string
@@ -27,6 +29,7 @@ export type ContentPageData = {
   seo_description: string | null
   created_at: string
   updated_at: string
+  blocks?: ContentBlock[] | null
 }
 
 export type ContentApiResponse = {

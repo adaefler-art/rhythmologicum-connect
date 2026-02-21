@@ -1,6 +1,7 @@
 // Content page type definitions based on database schema
 
 import { type ContentStatus } from '@/lib/contracts/registry'
+import { type ContentBlock } from '@/lib/contracts/contentBlocks'
 
 export type ContentPageSection = {
   id: string
@@ -27,6 +28,7 @@ export type ContentPage = {
   deleted_at: string | null
   seo_title: string | null
   seo_description: string | null
+  blocks?: ContentBlock[] | null
 }
 
 export type ContentPageWithFunnel = ContentPage & {

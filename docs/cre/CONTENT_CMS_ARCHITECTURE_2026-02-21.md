@@ -159,3 +159,14 @@ Für Rhythmologicum Connect mit bestehender Supabase-Content-Basis ist folgende 
 3. `apps/rhythm-patient-ui/app/patient/(mobile)/content/[slug]/page.tsx` auf Block-First + Markdown-Fallback umstellen.
 4. API/Resolver leicht erweitern, damit `blocks` immer mitgeliefert werden.
 5. Verifikation in bestehende Test-Checklisten aufnehmen (`published`, `draft`, `404`, XSS, responsive).
+
+## Umsetzungsstand (2026-02-21)
+
+Bereits umgesetzt (CMS-E1-01, technisch):
+
+- `lib/contracts/contentBlocks.ts`: Block-Contract v1 (`hero`, `rich_text`, `image`, `badge`, `cta`) inkl. Zod-Validierung
+- `lib/contracts/registry.ts`: kanonische `CONTENT_BLOCK_TYPE`-Konstanten
+- `lib/types/content.ts`: optionales `ContentPage.blocks` (backward-compatible)
+- `lib/utils/contentBlocks.ts`: sichere Block-Normalisierung (`withValidatedContentBlocks`)
+- `apps/rhythm-patient-ui/app/patient/(mobile)/content/[slug]/client.tsx`: Block-First Rendering + Markdown-Fallback
+- `apps/rhythm-patient-ui/app/api/content/[slug]/route.ts` und `lib/utils/contentResolver.ts`: validierte Block-Ausgabe in API/Resolver

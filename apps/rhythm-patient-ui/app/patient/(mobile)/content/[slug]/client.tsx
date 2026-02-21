@@ -12,6 +12,7 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import type { ContentPage } from '@/lib/types/content'
+import { type ContentBlock } from '@/lib/contracts/contentBlocks'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { type Components } from 'react-markdown'
@@ -84,10 +85,99 @@ const SafeImage: Components['img'] = ({ src, alt }) => {
 export default function ContentPageClient({ contentPage }: ContentPageClientProps) {
   const router = useRouter()
   const normalizedMarkdown = normalizeMarkdownImages(contentPage.body_markdown ?? '')
+  const hasBlocks = Array.isArray(contentPage.blocks) && contentPage.blocks.length > 0
 
   const handleBackToDashboard = () => {
     // I2.5: Use canonical route for deterministic navigation
     router.push(CANONICAL_ROUTES.DASHBOARD)
+  }
+
+  const renderBlock = (block: ContentBlock) => {
+    switch (block.type) {
+      case 'hero':
+        return (
+          <section key={block.id} className="mb-6">
+            <h2 className="text-2xl font-semibold text-slate-900">{block.title}</h2>
+            {block.subtitle && <p className="mt-2 text-slate-600">{block.subtitle}</p>}
+            {block.imageUrl && (
+              <img
+                src={normalizeImageSource(block.imageUrl)}
+                alt={block.imageAlt ?? ''}
+                loading="lazy"
+                decoding="async"
+                className="mt-4 w-full rounded-lg object-cover"
+              />
+            )}
+          </section>
+        )
+      case 'rich_text':
+        return (
+          <section key={block.id} className="prose prose-slate max-w-none mb-6">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              skipHtml={true}
+              components={{
+                a: SafeLink,
+                img: SafeImage,
+                table: ({ children, ...props }) => (
+                  <div className="w-full overflow-x-auto">
+                    <table className="w-full min-w-[640px]" {...props}>
+                      {children}
+                    </table>
+                  </div>
+                ),
+                th: ({ children, ...props }) => (
+                  <th className="whitespace-nowrap" {...props}>
+                    {children}
+                  </th>
+                ),
+              }}
+            >
+              {normalizeMarkdownImages(block.markdown)}
+            </ReactMarkdown>
+          </section>
+        )
+      case 'image':
+        return (
+          <figure key={block.id} className="mb-6">
+            <img
+              src={normalizeImageSource(block.imageUrl)}
+              alt={block.alt ?? ''}
+              loading="lazy"
+              decoding="async"
+              className="w-full rounded-lg object-cover"
+            />
+            {block.caption && <figcaption className="mt-2 text-sm text-slate-500">{block.caption}</figcaption>}
+          </figure>
+        )
+      case 'badge':
+        return (
+          <section key={block.id} className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold uppercase tracking-wide text-sky-700">{block.label}</p>
+            {block.text && <p className="mt-1 text-sm text-slate-700">{block.text}</p>}
+          </section>
+        )
+      case 'cta': {
+        const isExternal = block.href.startsWith('http://') || block.href.startsWith('https://')
+        const target = block.openInNewTab || isExternal ? '_blank' : undefined
+        const rel = target ? 'noopener noreferrer' : undefined
+
+        return (
+          <section key={block.id} className="mb-6">
+            <a
+              href={block.href}
+              target={target}
+              rel={rel}
+              className="inline-flex items-center justify-center rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
+            >
+              {block.label}
+            </a>
+          </section>
+        )
+      }
+      default:
+        return null
+    }
   }
 
   return (
@@ -114,32 +204,34 @@ export default function ContentPageClient({ contentPage }: ContentPageClientProp
             </p>
           )}
 
-          {/* Safe markdown rendering - XSS protected */}
-          {/* Uses react-markdown with skipHtml: true to prevent XSS */}
-          <div className="prose prose-slate max-w-none">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              skipHtml={true}
-              components={{
-                a: SafeLink,
-                img: SafeImage,
-                table: ({ children, ...props }) => (
-                  <div className="w-full overflow-x-auto">
-                    <table className="w-full min-w-[640px]" {...props}>
+          {hasBlocks ? (
+            <div>{contentPage.blocks?.map((block) => renderBlock(block)).filter(Boolean)}</div>
+          ) : (
+            <div className="prose prose-slate max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                skipHtml={true}
+                components={{
+                  a: SafeLink,
+                  img: SafeImage,
+                  table: ({ children, ...props }) => (
+                    <div className="w-full overflow-x-auto">
+                      <table className="w-full min-w-[640px]" {...props}>
+                        {children}
+                      </table>
+                    </div>
+                  ),
+                  th: ({ children, ...props }) => (
+                    <th className="whitespace-nowrap" {...props}>
                       {children}
-                    </table>
-                  </div>
-                ),
-                th: ({ children, ...props }) => (
-                  <th className="whitespace-nowrap" {...props}>
-                    {children}
-                  </th>
-                ),
-              }}
-            >
-              {normalizedMarkdown}
-            </ReactMarkdown>
-          </div>
+                    </th>
+                  ),
+                }}
+              >
+                {normalizedMarkdown}
+              </ReactMarkdown>
+            </div>
+          )}
         </div>
       </div>
     </div>

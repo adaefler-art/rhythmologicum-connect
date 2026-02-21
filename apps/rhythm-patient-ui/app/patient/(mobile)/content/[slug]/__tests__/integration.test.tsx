@@ -100,18 +100,18 @@ describe('E6.5.7 — Content Page Rendering', () => {
     })
   })
 
-  describe('AC3: Back navigation to dashboard', () => {
-    it('should render back to dashboard button', () => {
+  describe('AC3: Back navigation to start', () => {
+    it('should render back to start button', () => {
       render(<ContentPageClient contentPage={mockContentPage} />)
 
-      const backButton = screen.getByText('Zurück zum Dashboard')
+      const backButton = screen.getByText('Zurück zum Start')
       expect(backButton).toBeInTheDocument()
     })
 
-    it('should navigate to dashboard when back button is clicked', () => {
+    it('should navigate to start when back button is clicked', () => {
       render(<ContentPageClient contentPage={mockContentPage} />)
 
-      const backButton = screen.getByText('Zurück zum Dashboard')
+      const backButton = screen.getByText('Zurück zum Start')
       fireEvent.click(backButton)
 
       expect(mockPush).toHaveBeenCalledWith('/patient/start')
@@ -119,6 +119,23 @@ describe('E6.5.7 — Content Page Rendering', () => {
   })
 
   describe('Content rendering', () => {
+    it('should render CMS blocks when blocks are present', () => {
+      const blockContentPage: ContentPage = {
+        ...mockContentPage,
+        blocks: [
+          { id: 'hero-1', type: 'hero', title: 'Hero Titel', subtitle: 'Hero Untertitel', order: 0 },
+          { id: 'badge-1', type: 'badge', label: 'Auszeichnung', text: 'Top bewertet', order: 1 },
+          { id: 'cta-1', type: 'cta', label: 'Mehr erfahren', href: '/patient/start', order: 2 },
+        ],
+      }
+
+      render(<ContentPageClient contentPage={blockContentPage} />)
+
+      expect(screen.getByText('Hero Titel')).toBeInTheDocument()
+      expect(screen.getByText('Auszeichnung')).toBeInTheDocument()
+      expect(screen.getByText('Mehr erfahren')).toBeInTheDocument()
+    })
+
     it('should render content without excerpt if not provided', () => {
       const noExcerptPage: ContentPage = {
         ...mockContentPage,

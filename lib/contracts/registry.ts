@@ -46,6 +46,23 @@ export const CONTENT_STATUS = {
 export type ContentStatus = typeof CONTENT_STATUS[keyof typeof CONTENT_STATUS]
 
 // ============================================================
+// Content Block Types (CMS v1)
+// ============================================================
+
+/**
+ * Valid block types for patient-facing CMS content pages
+ */
+export const CONTENT_BLOCK_TYPE = {
+  HERO: 'hero',
+  RICH_TEXT: 'rich_text',
+  IMAGE: 'image',
+  BADGE: 'badge',
+  CTA: 'cta',
+} as const
+
+export type ContentBlockType = typeof CONTENT_BLOCK_TYPE[keyof typeof CONTENT_BLOCK_TYPE]
+
+// ============================================================
 // Pillar Keys (7-Pillar Model)
 // ============================================================
 

@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { ContentPage } from '@/lib/types/content'
 import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug, isKnownFunnelSlug } from '@/lib/contracts/registry'
+import { withValidatedContentBlocks, withValidatedContentBlocksList } from '@/lib/utils/contentBlocks'
 import { env } from '@/lib/env'
 
 /**
@@ -225,7 +226,7 @@ export async function getContentPage(
 
       if (!error && data) {
         return {
-          page: data as ContentPage,
+          page: withValidatedContentBlocks(data as ContentPage),
           strategy: 'exact-match',
         }
       }
@@ -242,7 +243,7 @@ export async function getContentPage(
 
       if (!error && data) {
         return {
-          page: data as ContentPage,
+          page: withValidatedContentBlocks(data as ContentPage),
           strategy: 'category-default',
         }
       }
@@ -257,7 +258,7 @@ export async function getContentPage(
 
     if (!error && data) {
       return {
-        page: data as ContentPage,
+        page: withValidatedContentBlocks(data as ContentPage),
         strategy: 'funnel-default',
       }
     }
@@ -336,7 +337,7 @@ export async function getContentPages(
       return []
     }
 
-    return (data || []) as ContentPage[]
+    return withValidatedContentBlocksList((data || []) as ContentPage[])
   } catch (error) {
     // Graceful error handling
     console.error('Content Resolver error:', error)
