@@ -17,6 +17,12 @@ type SliderRow = {
   created_at: string
 }
 
+function buildContentActionTarget(slug: string, id: string): string {
+  const encodedSlug = encodeURIComponent(slug)
+  const params = new URLSearchParams({ id })
+  return `/patient/content/${encodedSlug}?${params.toString()}`
+}
+
 export async function GET() {
   const supabase = await createServerSupabaseClient()
 
@@ -72,7 +78,7 @@ export async function GET() {
         title: row.title ?? 'Inhalt',
         excerpt: row.excerpt ?? '',
         teaserImageUrl: null,
-        actionTarget: `/patient/content/${row.slug}`,
+        actionTarget: buildContentActionTarget(String(row.slug), row.id),
         priority: row.priority ?? 0,
       }))
 
@@ -104,7 +110,7 @@ export async function GET() {
       title: row.title ?? 'Inhalt',
       excerpt: row.excerpt ?? '',
       teaserImageUrl: row.teaser_image_url,
-      actionTarget: `/patient/content/${row.slug}`,
+      actionTarget: buildContentActionTarget(String(row.slug), row.id),
       priority: row.priority ?? 0,
     }))
 

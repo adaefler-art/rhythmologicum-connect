@@ -76,6 +76,12 @@ function mapCategoryToTileType(category: string | null): ContentTile['type'] {
 	}
 }
 
+function buildContentActionTarget(slug: string, id: string): string {
+	const encodedSlug = encodeURIComponent(slug)
+	const params = new URLSearchParams({ id })
+	return `/patient/content/${encodedSlug}?${params.toString()}`
+}
+
 async function fetchContentTilesFromDb(
 	supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
 	maxTiles: number,
@@ -107,7 +113,7 @@ async function fetchContentTilesFromDb(
 				title: row.title ?? 'Inhalt',
 				description: row.excerpt ?? '',
 				actionLabel: null,
-				actionTarget: `/patient/content/${row.slug}`,
+				actionTarget: buildContentActionTarget(String(row.slug), row.id),
 				priority: row.priority ?? 0,
 			}))
 

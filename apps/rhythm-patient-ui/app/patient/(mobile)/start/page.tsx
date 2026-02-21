@@ -55,7 +55,30 @@ function getTeaserImageForActionTarget(actionTarget: string | null): string {
 function resolveTeaserImage(actionTarget: string | null, teaserImageUrl?: string | null): string {
   const trimmedTeaser = teaserImageUrl?.trim()
   if (trimmedTeaser) {
-    return trimmedTeaser
+    if (trimmedTeaser.startsWith('http://') || trimmedTeaser.startsWith('https://')) {
+      return encodeURI(trimmedTeaser)
+    }
+
+    if (trimmedTeaser.startsWith('/')) {
+      return encodeURI(trimmedTeaser)
+    }
+
+    if (trimmedTeaser.startsWith('images/')) {
+      return encodeURI(`/${trimmedTeaser}`)
+    }
+
+    if (/^!\[[^\]]*\]\(([^)]+)\)$/u.test(trimmedTeaser)) {
+      const extracted = trimmedTeaser.replace(/^!\[[^\]]*\]\(([^)]+)\)$/u, '$1').trim()
+      if (extracted.startsWith('/')) {
+        return encodeURI(extracted)
+      }
+      if (extracted.startsWith('images/')) {
+        return encodeURI(`/${extracted}`)
+      }
+      return encodeURI(extracted)
+    }
+
+    return encodeURI(trimmedTeaser)
   }
 
   return getTeaserImageForActionTarget(actionTarget)
@@ -73,6 +96,7 @@ export default function PatientEntryScreen() {
   }>>([])
   const [sliderLoading, setSliderLoading] = useState(true)
   const [activeContentIndex, setActiveContentIndex] = useState(0)
+  const [failedImageSources, setFailedImageSources] = useState<Record<string, true>>({})
 
   const contentTiles = useMemo(() => {
     return [...sliderItems].sort((first, second) => second.priority - first.priority)
@@ -138,10 +162,14 @@ export default function PatientEntryScreen() {
   }, [contentTiles.length])
 
   const activeContentTile = contentTiles[activeContentIndex] ?? null
-  const activeContentTeaserImageSrc = resolveTeaserImage(
+  const resolvedActiveContentTeaserImageSrc = resolveTeaserImage(
     activeContentTile?.actionTarget ?? null,
     activeContentTile?.teaserImageUrl,
   )
+  const activeContentTeaserImageSrc =
+    activeContentTile && failedImageSources[resolvedActiveContentTeaserImageSrc]
+      ? getTeaserImageForActionTarget(activeContentTile.actionTarget)
+      : resolvedActiveContentTeaserImageSrc
 
   const openActiveContent = () => {
     if (!activeContentTile?.actionTarget) return
@@ -217,7 +245,10 @@ export default function PatientEntryScreen() {
                     alt={`Teaserbild: ${activeContentTile.title}`}
                     width={1200}
                     height={675}
-                    className="h-56 w-full object-cover"
+                    className="h-56 w-full object-contain bg-slate-100"
+                    onError={() => {
+                      setFailedImageSources((current) => ({ ...current, [resolvedActiveContentTeaserImageSrc]: true }))
+                    }}
                   />
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 

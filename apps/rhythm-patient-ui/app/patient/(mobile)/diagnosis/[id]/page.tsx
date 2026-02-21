@@ -20,7 +20,7 @@ export default async function PatientDiagnosisDetailPage({ params }: PageProps) 
   // Feature flag check
   const diagnosisPatientEnabled = isFeatureEnabled('DIAGNOSIS_PATIENT_ENABLED')
   if (!diagnosisPatientEnabled) {
-    redirect('/patient/dashboard')
+    redirect('/patient/start')
   }
 
   // Check authentication

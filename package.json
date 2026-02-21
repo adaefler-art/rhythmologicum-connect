@@ -92,6 +92,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:inbox": "jest test/e78-9-inbox-contracts.test.ts",
+    "test:patient:e2e": "playwright test tests/e2e/patient-intake-start-cta.spec.ts tests/e2e/patient-followup-loop.spec.ts tests/e2e/patient-safety-gate-support.spec.ts",
     "test:studio:layout": "playwright test tests/studio-admin-layout.spec.ts",
     "test:studio:e2e": "playwright test",
     "smoke:inbox": "node --loader ts-node/esm scripts/ci/smoke-e78-9-inbox.mts"

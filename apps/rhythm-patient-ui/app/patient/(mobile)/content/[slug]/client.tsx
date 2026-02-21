@@ -3,7 +3,7 @@
  * 
  * Renders content page with:
  * - Safe markdown rendering (XSS-protected)
- * - Back navigation to dashboard (canonical route)
+ * - Back navigation to start (canonical route)
  * - No PHI/user-specific data
  */
 
@@ -44,8 +44,46 @@ const SafeLink: Components['a'] = ({ href, children, ...props }) => {
   )
 }
 
+function normalizeImageSource(src: string): string {
+  const trimmed = src.trim()
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+    return encodeURI(trimmed)
+  }
+
+  if (trimmed.startsWith('images/')) {
+    return encodeURI(`/${trimmed}`)
+  }
+
+  return encodeURI(trimmed)
+}
+
+function normalizeMarkdownImages(markdown: string): string {
+  return markdown.replace(
+    /<img\s+[^>]*src=["']([^"']+)["'][^>]*>/gi,
+    (_match, src: string) => `![](${normalizeImageSource(src)})`,
+  )
+}
+
+const SafeImage: Components['img'] = ({ src, alt }) => {
+  if (!src) {
+    return null
+  }
+
+  return (
+    <img
+      src={normalizeImageSource(src)}
+      alt={alt ?? ''}
+      loading="lazy"
+      decoding="async"
+      className="my-4 w-full rounded-lg object-cover"
+    />
+  )
+}
+
 export default function ContentPageClient({ contentPage }: ContentPageClientProps) {
   const router = useRouter()
+  const normalizedMarkdown = normalizeMarkdownImages(contentPage.body_markdown ?? '')
 
   const handleBackToDashboard = () => {
     // I2.5: Use canonical route for deterministic navigation
@@ -55,13 +93,13 @@ export default function ContentPageClient({ contentPage }: ContentPageClientProp
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        {/* AC3: Back navigation to dashboard */}
+        {/* AC3: Back navigation to start */}
         <button
           onClick={handleBackToDashboard}
           className="mb-6 flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>Zurück zum Dashboard</span>
+          <span>Zurück zum Start</span>
         </button>
 
         {/* Content page header */}
@@ -84,6 +122,7 @@ export default function ContentPageClient({ contentPage }: ContentPageClientProp
               skipHtml={true}
               components={{
                 a: SafeLink,
+                img: SafeImage,
                 table: ({ children, ...props }) => (
                   <div className="w-full overflow-x-auto">
                     <table className="w-full min-w-[640px]" {...props}>
@@ -98,7 +137,7 @@ export default function ContentPageClient({ contentPage }: ContentPageClientProp
                 ),
               }}
             >
-              {contentPage.body_markdown}
+              {normalizedMarkdown}
             </ReactMarkdown>
           </div>
         </div>

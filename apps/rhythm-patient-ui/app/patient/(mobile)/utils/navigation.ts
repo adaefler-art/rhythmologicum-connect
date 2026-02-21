@@ -23,7 +23,7 @@ export const CANONICAL_ROUTES = {
   START: '/patient/start',
 
   /** Main hub/home screen */
-  DASHBOARD: '/patient/dashboard',
+  DASHBOARD: '/patient/start',
   
   /** Assessment selection/list screen */
   ASSESS: '/patient/assess',
@@ -186,7 +186,7 @@ export function getNearestCanonicalRoute(path: string): string {
   
   // Dashboard routes
   if (pathWithoutQuery.startsWith('/patient/dashboard')) {
-    return CANONICAL_ROUTES.DASHBOARD
+    return CANONICAL_ROUTES.START
   }
   
   // Assessment routes
@@ -224,5 +224,5 @@ export function getNearestCanonicalRoute(path: string): string {
   }
   
   // Default fallback to dashboard
-  return CANONICAL_ROUTES.DASHBOARD
+  return CANONICAL_ROUTES.START
 }

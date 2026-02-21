@@ -10,10 +10,10 @@ export default function ContentNotFound() {
           Die angeforderte Seite ist nicht verfügbar oder wurde entfernt.
         </p>
         <Link
-          href="/patient/dashboard"
+          href="/patient/start"
           className="inline-flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 py-3 rounded-lg transition-colors"
         >
-          Zurück zum Dashboard
+          Zurück zum Start
         </Link>
       </div>
     </div>

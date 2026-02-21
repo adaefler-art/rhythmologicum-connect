@@ -50,7 +50,7 @@ export default function PatientSupportPage() {
               Notruf 112 anrufen
             </a>
           ) : (
-            <Button variant="primary" size="md" fullWidth onClick={() => router.push('/patient/dashboard')}>
+            <Button variant="primary" size="md" fullWidth onClick={() => router.push('/patient/start')}>
               Zur Übersicht
             </Button>
           )}

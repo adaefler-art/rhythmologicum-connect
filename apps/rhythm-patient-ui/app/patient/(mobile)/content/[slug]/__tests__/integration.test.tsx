@@ -114,7 +114,7 @@ describe('E6.5.7 — Content Page Rendering', () => {
       const backButton = screen.getByText('Zurück zum Dashboard')
       fireEvent.click(backButton)
 
-      expect(mockPush).toHaveBeenCalledWith('/patient/dashboard')
+      expect(mockPush).toHaveBeenCalledWith('/patient/start')
     })
   })
 

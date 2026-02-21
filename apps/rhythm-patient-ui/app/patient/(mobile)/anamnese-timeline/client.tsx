@@ -140,7 +140,7 @@ export default function AnamneseTimelineClient() {
     return (
       <div className="flex w-full flex-col gap-6 px-4 py-10">
         <button
-          onClick={() => router.push('/patient/dashboard')}
+          onClick={() => router.push('/patient/start')}
           className="self-start inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:text-sky-900"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -179,7 +179,7 @@ export default function AnamneseTimelineClient() {
       <div className="flex w-full flex-col gap-6 px-4 py-10">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => router.push('/patient/dashboard')}
+            onClick={() => router.push('/patient/start')}
             className="inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:text-sky-900"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -202,7 +202,7 @@ export default function AnamneseTimelineClient() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <button
-          onClick={() => router.push('/patient/dashboard')}
+          onClick={() => router.push('/patient/start')}
           className="inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:text-sky-900"
         >
           <ArrowLeft className="h-4 w-4" />

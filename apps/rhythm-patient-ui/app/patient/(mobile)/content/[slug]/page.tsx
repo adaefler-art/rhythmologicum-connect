@@ -8,11 +8,38 @@ import { getContentPage } from '@/lib/utils/contentResolver'
 import ContentPageClient from './client'
 
 type PageProps = {
-  params: { slug: string }
-  searchParams?: { [key: string]: string | string[] | undefined }
+  params: Promise<{ slug: string }>
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export const dynamic = 'force-dynamic'
+
+function getSlugCandidates(rawSlug: string): string[] {
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(rawSlug)
+    } catch {
+      return rawSlug
+    }
+  })()
+
+  const candidates = new Set<string>()
+  const baseValues = [rawSlug, decoded]
+
+  for (const value of baseValues) {
+    const trimmed = value.trim()
+    if (!trimmed) {
+      continue
+    }
+
+    const lower = trimmed.toLowerCase()
+    candidates.add(lower)
+    candidates.add(lower.replace(/\s+/g, '-'))
+    candidates.add(lower.replace(/-/g, ' '))
+  }
+
+  return Array.from(candidates)
+}
 
 function ContentNotFoundState({ slug, funnel }: { slug: string; funnel: string }) {
   return (
@@ -29,10 +56,10 @@ function ContentNotFoundState({ slug, funnel }: { slug: string; funnel: string }
           </p>
           <div className="mt-6">
             <Link
-              href="/patient/dashboard"
+              href="/patient/start"
               className="inline-flex items-center justify-center rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700"
             >
-              Zurück zum Dashboard
+              Zurück zum Start
             </Link>
           </div>
         </div>
@@ -52,8 +79,12 @@ function ContentNotFoundState({ slug, funnel }: { slug: string; funnel: string }
  * - AC3: Back navigation to dashboard
  */
 export default async function ContentPage({ params, searchParams }: PageProps) {
-  const { slug } = params
-  const funnelParam = typeof searchParams?.funnel === 'string' ? searchParams.funnel : undefined
+  const { slug: rawSlug } = await params
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const slugCandidates = getSlugCandidates(rawSlug)
+  const contentId = typeof resolvedSearchParams?.id === 'string' ? resolvedSearchParams.id : undefined
+  const funnelParam =
+    typeof resolvedSearchParams?.funnel === 'string' ? resolvedSearchParams.funnel : undefined
   const funnel = funnelParam ? getCanonicalFunnelSlug(funnelParam) : DEFAULT_PATIENT_FUNNEL
 
   // Create Supabase server client
@@ -95,21 +126,70 @@ export default async function ContentPage({ params, searchParams }: PageProps) {
   // AC1: Unknown slug → Content not found UI (not 500)
   // AC2: No PHI, no user-specific data required
   try {
-    const result = await getContentPage({ funnel, slug })
+    if (contentId) {
+      const { data: byIdContent, error: byIdError } = await supabase
+        .from('content_pages')
+        .select('*')
+        .eq('id', contentId)
+        .eq('status', 'published')
+        .is('deleted_at', null)
+        .maybeSingle()
+
+      if (byIdError) {
+        console.warn('[CONTENT_PAGE] ID lookup failed, falling back to slug', {
+          slug: rawSlug,
+          contentId,
+          errorCode: byIdError.code,
+          errorMessage: byIdError.message,
+        })
+      }
+
+      if (byIdContent) {
+        return <ContentPageClient contentPage={byIdContent as ContentPage} />
+      }
+    }
+
+    const { data: exactContent, error: exactError } = await supabase
+      .from('content_pages')
+      .select('*')
+      .eq('status', 'published')
+      .is('deleted_at', null)
+      .in('slug', slugCandidates)
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (exactError) {
+      console.warn('[CONTENT_PAGE] Exact slug lookup failed, falling back to resolver', {
+        slug: rawSlug,
+        slugCandidates,
+        errorCode: exactError.code,
+        errorMessage: exactError.message,
+      })
+    }
+
+    if (exactContent) {
+      return <ContentPageClient contentPage={exactContent as ContentPage} />
+    }
+
+    const resolverSlug = slugCandidates[0] ?? rawSlug
+    const result = await getContentPage({ funnel, slug: resolverSlug })
 
     if (!result.page) {
       console.warn('[CONTENT_PAGE] Content page not found via resolver', {
-        slug,
+        slug: rawSlug,
+        slugCandidates,
         funnel,
         strategy: result.strategy,
         error: result.error,
       })
-      return <ContentNotFoundState slug={slug} funnel={funnel} />
+      return <ContentNotFoundState slug={rawSlug} funnel={funnel} />
     }
 
     const contentPage = result.page as ContentPage
     console.log('[CONTENT_PAGE] Content page loaded successfully', {
-      slug,
+      slug: rawSlug,
       funnel,
       title: contentPage.title,
     })
@@ -117,11 +197,12 @@ export default async function ContentPage({ params, searchParams }: PageProps) {
     return <ContentPageClient contentPage={contentPage} />
   } catch (err) {
     console.error('[CONTENT_PAGE] Unexpected error loading content', {
-      slug,
+      slug: rawSlug,
+      slugCandidates,
       funnel,
       errorType: err instanceof Error ? err.name : 'unknown',
       errorMessage: err instanceof Error ? err.message : String(err),
     })
-    return <ContentNotFoundState slug={slug} funnel={funnel} />
+    return <ContentNotFoundState slug={rawSlug} funnel={funnel} />
   }
 }

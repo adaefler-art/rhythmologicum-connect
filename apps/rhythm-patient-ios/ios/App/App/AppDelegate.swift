@@ -12,6 +12,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UITabBarControllerDelegat
     private weak var startWebRootViewController: UIViewController?
     private weak var statusWebRootViewController: UIViewController?
     private weak var tabBarControllerRef: UITabBarController?
+    private weak var startNavigationControllerRef: UINavigationController?
     private weak var statusNavigationControllerRef: UINavigationController?
     private var sessionKeepAliveTimer: Timer?
     private var isUnlockInProgress = false
@@ -102,6 +103,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UITabBarControllerDelegat
         tabBarController.delegate = self
         tabBarController.selectedIndex = 0
         tabBarControllerRef = tabBarController
+        startNavigationControllerRef = startNavigationController
         statusNavigationControllerRef = statusNavigationController
 
         let appWindow = UIWindow(frame: UIScreen.main.bounds)
@@ -322,9 +324,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UITabBarControllerDelegat
     }
 
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
-        guard let statusNavigationController = statusNavigationControllerRef else { return }
+        if let startNavigationController = startNavigationControllerRef,
+           viewController === startNavigationController {
+            DispatchQueue.main.async { [weak self] in
+                self?.loadWebPath("/patient/start", rootViewController: self?.startWebRootViewController)
+            }
+            return
+        }
 
-        if viewController === statusNavigationController {
+        if let statusNavigationController = statusNavigationControllerRef,
+           viewController === statusNavigationController {
             DispatchQueue.main.async { [weak self] in
                 self?.loadWebPath("/patient/status", rootViewController: self?.statusWebRootViewController)
             }

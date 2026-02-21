@@ -10,6 +10,12 @@ type ContentTileRow = {
   updated_at: string | null
 }
 
+function buildContentActionTarget(slug: string, id: string): string {
+  const encodedSlug = encodeURIComponent(slug)
+  const params = new URLSearchParams({ id })
+  return `/patient/content/${encodedSlug}?${params.toString()}`
+}
+
 const MAX_TILES = 12
 
 async function fetchContentTiles(): Promise<ContentTile[]> {
@@ -39,7 +45,7 @@ async function fetchContentTiles(): Promise<ContentTile[]> {
       title: row.title ?? 'Inhalt',
       description: row.excerpt ?? '',
       actionLabel: null,
-      actionTarget: `/patient/content/${row.slug}`,
+      actionTarget: buildContentActionTarget(String(row.slug), row.id),
       priority: 0,
     }))
 }
