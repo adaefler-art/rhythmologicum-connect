@@ -178,3 +178,8 @@ Bereits umgesetzt (CMS-E1-01, technisch):
 - `lib/utils/contentBlocks.ts`: sichere Block-Normalisierung (`withValidatedContentBlocks`)
 - `apps/rhythm-patient-ui/app/patient/(mobile)/content/[slug]/client.tsx`: Block-First Rendering + Markdown-Fallback
 - `apps/rhythm-patient-ui/app/api/content/[slug]/route.ts` und `lib/utils/contentResolver.ts`: validierte Block-Ausgabe in API/Resolver
+
+CMS-E1-05 (in Arbeit, technischer Integrations-Blueprint):
+
+- `docs/cre/CMS_E1_05_PAYLOAD_INTEGRATION_BLUEPRINT_2026-02-21.md`
+- `lib/cms/payload/sync.ts` + Endpoints unter `apps/rhythm-patient-ui/app/api/cms/payload/*`

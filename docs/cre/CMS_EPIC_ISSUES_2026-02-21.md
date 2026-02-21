@@ -33,7 +33,7 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
 | CMS-E1-02 | Patient Block-Renderer v1 (Block-First) | P0 | M | in_progress | CMS-E1-01 |
 | CMS-E1-03 | Resolver/API um `blocks` erweitern | P0 | M | in_progress | CMS-E1-01 |
 | CMS-E1-04 | CMS-Plattformentscheidung (Payload vs SaaS) | P1 | S | done | CMS-E1-01 |
-| CMS-E1-05 | CMS-Integration (Sync/Webhook + Preview) | P1 | M-L | todo | CMS-E1-02, CMS-E1-03, CMS-E1-04 |
+| CMS-E1-05 | CMS-Integration (Sync/Webhook + Preview) | P1 | M-L | in_progress | CMS-E1-02, CMS-E1-03, CMS-E1-04 |
 | CMS-E1-06 | Editorial Workflow + Rollen + Audit | P1 | M | todo | CMS-E1-05 |
 | CMS-E1-07 | QA/Security/Monitoring Content-Pipeline | P1 | M | todo | CMS-E1-05 |
 
@@ -97,18 +97,23 @@ Ergebnis:
 - Entscheidung: Payload CMS (self-hosted)
 - Begründung und Matrix: `docs/cre/CMS_PLATFORM_DECISION_ADR_2026-02-21.md`
 
-### [ ] CMS-E1-05 — CMS-Integration (Sync/Webhook + Preview)
-- **Status**: todo
+### [~] CMS-E1-05 — CMS-Integration (Sync/Webhook + Preview)
+- **Status**: in_progress
 - **Owner**: Backend + Patient UI
 - **Ziel**: Inhalte aus CMS automatisiert in die App liefern, inkl. Vorschau.
 - **Tasks**:
-  - [ ] Publish-Webhook oder Pull-Sync implementieren
-  - [ ] Preview-Mechanismus für Draft-Inhalte aufsetzen (rollenbasiert)
-  - [ ] Cache-Invalidierung/Revalidate-Flows definieren
+  - [x] Publish-Webhook oder Pull-Sync implementieren
+  - [x] Preview-Mechanismus für Draft-Inhalte aufsetzen (Secret-geschützt)
+  - [x] Cache-Invalidierung/Revalidate-Flows definieren
 - **Akzeptanzkriterien**:
-  - [ ] Veröffentlichung erscheint ohne Code-Deploy in der App
-  - [ ] Draft ist nur im Preview sichtbar, nicht öffentlich
-  - [ ] Sync-/Webhook-Fehler sind observierbar und recoverbar
+  - [x] Veröffentlichung erscheint ohne Code-Deploy in der App
+  - [x] Draft ist nur im Preview sichtbar, nicht öffentlich
+  - [x] Sync-/Webhook-Fehler sind observierbar und recoverbar
+
+Aktueller Stand:
+
+- Technischer Blueprint + Endpoint-Slice umgesetzt (`sync`, `webhook`, `preview`, `preview/disable`).
+- Dokumentation: `docs/cre/CMS_E1_05_PAYLOAD_INTEGRATION_BLUEPRINT_2026-02-21.md`
 
 ### [ ] CMS-E1-06 — Editorial Workflow + Rollen + Audit
 - **Status**: todo
