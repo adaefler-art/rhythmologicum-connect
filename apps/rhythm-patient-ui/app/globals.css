@@ -64,7 +64,7 @@
   --radius-lg: 0;
   --radius-xl: 0;
   --radius-2xl: 0;
-  --radius-full: 0;
+  --radius-full: 9999px;
   
   /* ========================================
    * SHADOW TOKENS
