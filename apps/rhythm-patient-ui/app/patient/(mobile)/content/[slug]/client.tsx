@@ -66,7 +66,7 @@ function normalizeMarkdownImages(markdown: string): string {
 }
 
 const SafeImage: Components['img'] = ({ src, alt }) => {
-  if (!src) {
+  if (!src || typeof src !== 'string') {
     return null
   }
 
