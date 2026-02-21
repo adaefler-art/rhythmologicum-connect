@@ -13,6 +13,7 @@ Referenzen:
 - `docs/cre/UC1_MANUAL_TEST_CATCHUP_RUNBOOK_2026-02-19.md`
 - `docs/cre/CONTENT_CMS_ARCHITECTURE_2026-02-21.md`
 - `docs/cre/CMS_EPIC_ISSUES_2026-02-21.md`
+- `docs/cre/CMS_PLATFORM_DECISION_ADR_2026-02-21.md`
 
 Statuswerte:
 - [ ] offen
@@ -217,7 +218,7 @@ Arbeitspakete (Issue-Mapping):
 - [x] CMS-E1-01 Block Contract v1 + Typen (siehe `docs/cre/CMS_EPIC_ISSUES_2026-02-21.md`)
 - [~] CMS-E1-02 Block-Renderer v1 in Patient UI
 - [~] CMS-E1-03 Resolver/API auf `blocks` erweitern
-- [ ] CMS-E1-04 Headless CMS Auswahl + Betriebsentscheidung (Payload vs SaaS)
+- [x] CMS-E1-04 Headless CMS Auswahl + Betriebsentscheidung (Payload vs SaaS)
 - [ ] CMS-E1-05 CMS Integration (Sync/Webhook + Preview)
 - [ ] CMS-E1-06 Editorial Workflow + Rollen + Audit
 - [ ] CMS-E1-07 QA/Security/Monitoring für Content-Pipeline
@@ -266,6 +267,7 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-21: Content/CMS-Zielarchitektur für patient-facing Inhaltsseiten dokumentiert (Build-vs-Buy-Entscheidung, Block-Renderer-Ansatz, Migrationspfad) (`docs/cre/CONTENT_CMS_ARCHITECTURE_2026-02-21.md`).
 - 2026-02-21: Headless-CMS-Epic in v0.8-Execution-Checklist aufgenommen inkl. priorisiertem Arbeitspaket und Issue-Mapping (`docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-19.md`, `docs/cre/CMS_EPIC_ISSUES_2026-02-21.md`).
 - 2026-02-21: CMS-E1-01 implementiert (Block-Contract v1 mit Zod-Validator, `ContentPage.blocks` Typ-Erweiterung, sichere Block-Normalisierung in Resolver/API/Patient-Content-Route, Block-First-Rendering mit Markdown-Fallback) (`lib/contracts/contentBlocks.ts`, `lib/contracts/registry.ts`, `lib/types/content.ts`, `lib/utils/contentBlocks.ts`, `lib/utils/contentResolver.ts`, `apps/rhythm-patient-ui/app/patient/(mobile)/content/[slug]/page.tsx`, `apps/rhythm-patient-ui/app/patient/(mobile)/content/[slug]/client.tsx`, `apps/rhythm-patient-ui/app/api/content/[slug]/route.ts`, `apps/rhythm-patient-ui/lib/api/contentApi.ts`, `lib/contracts/__tests__/contentBlocks.test.ts`).
+- 2026-02-21: CMS-E1-04 abgeschlossen: Plattformentscheidung via gewichteter Matrix + ADR getroffen (Payload CMS self-hosted als Zielplattform inkl. Umsetzungspfad) (`docs/cre/CMS_PLATFORM_DECISION_ADR_2026-02-21.md`, `docs/cre/CMS_EPIC_ISSUES_2026-02-21.md`, `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-19.md`).
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).

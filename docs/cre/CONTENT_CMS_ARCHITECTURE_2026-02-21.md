@@ -87,6 +87,14 @@ Für euren aktuellen Stack ist Variante B besonders anschlussfähig, da bereits 
 - Pros: schneller Start, sehr gute Editorial UX, Preview/Webhooks out-of-the-box.
 - Cons: Vendor-Abhängigkeit, laufende Kosten, ggf. Datenresidenz prüfen.
 
+## Plattformentscheidung (Stand 2026-02-21)
+
+Entschieden: **Payload CMS (self-hosted)** als Zielplattform.
+
+Begründung und gewichtete Matrix sind dokumentiert in:
+
+- `docs/cre/CMS_PLATFORM_DECISION_ADR_2026-02-21.md`
+
 ## Empfohlener Migrationspfad (inkrementell)
 
 ## Phase 0 (1-2 Tage) – Contract festlegen

@@ -32,7 +32,7 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
 | CMS-E1-01 | Block-Contract v1 + Content-Typen | P0 | S-M | done | - |
 | CMS-E1-02 | Patient Block-Renderer v1 (Block-First) | P0 | M | in_progress | CMS-E1-01 |
 | CMS-E1-03 | Resolver/API um `blocks` erweitern | P0 | M | in_progress | CMS-E1-01 |
-| CMS-E1-04 | CMS-Plattformentscheidung (Payload vs SaaS) | P1 | S | todo | CMS-E1-01 |
+| CMS-E1-04 | CMS-Plattformentscheidung (Payload vs SaaS) | P1 | S | done | CMS-E1-01 |
 | CMS-E1-05 | CMS-Integration (Sync/Webhook + Preview) | P1 | M-L | todo | CMS-E1-02, CMS-E1-03, CMS-E1-04 |
 | CMS-E1-06 | Editorial Workflow + Rollen + Audit | P1 | M | todo | CMS-E1-05 |
 | CMS-E1-07 | QA/Security/Monitoring Content-Pipeline | P1 | M | todo | CMS-E1-05 |
@@ -80,17 +80,22 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
   - [x] 404-/Fallback-Logik bleibt konsistent
   - [ ] Keine Regression in `content-slider` und Slug-Routen
 
-### [ ] CMS-E1-04 — CMS-Plattformentscheidung (Payload vs SaaS)
-- **Status**: todo
+### [x] CMS-E1-04 — CMS-Plattformentscheidung (Payload vs SaaS)
+- **Status**: done
 - **Owner**: Product + Tech Lead + Ops
 - **Ziel**: Verbindliche Plattformentscheidung anhand Governance-/Betriebskriterien.
 - **Tasks**:
-  - [ ] Entscheidungsmatrix (Datenresidenz, Security, Kosten, Betriebsaufwand, Workflow)
-  - [ ] POC-Check mit 1-2 Beispielseiten
-  - [ ] Entscheidung dokumentieren inkl. ADR-ähnlicher Begründung
+  - [x] Entscheidungsmatrix (Datenresidenz, Security, Kosten, Betriebsaufwand, Workflow)
+  - [x] POC-Check mit 1-2 Beispielseiten
+  - [x] Entscheidung dokumentieren inkl. ADR-ähnlicher Begründung
 - **Akzeptanzkriterien**:
-  - [ ] Entscheidung ist schriftlich dokumentiert und freigegeben
-  - [ ] Betriebspfad (SaaS oder self-hosted) ist klar beschrieben
+  - [x] Entscheidung ist schriftlich dokumentiert und freigegeben
+  - [x] Betriebspfad (SaaS oder self-hosted) ist klar beschrieben
+
+Ergebnis:
+
+- Entscheidung: Payload CMS (self-hosted)
+- Begründung und Matrix: `docs/cre/CMS_PLATFORM_DECISION_ADR_2026-02-21.md`
 
 ### [ ] CMS-E1-05 — CMS-Integration (Sync/Webhook + Preview)
 - **Status**: todo
@@ -135,6 +140,7 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
 ## Referenzen
 
 - `docs/cre/CONTENT_CMS_ARCHITECTURE_2026-02-21.md`
+- `docs/cre/CMS_PLATFORM_DECISION_ADR_2026-02-21.md`
 - `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-19.md`
 - `apps/rhythm-patient-ui/app/patient/(mobile)/content/[slug]/page.tsx`
 - `lib/utils/contentResolver.ts`
