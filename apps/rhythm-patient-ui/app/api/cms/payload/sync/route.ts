@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { syncPayloadContentPages } from '@/lib/cms/payload/sync'
 import { resolveCmsAccess } from '@/lib/cms/payload/access'
 import { CMS_AUDIT_ACTION, CMS_AUDIT_ENTITY, logCmsPayloadAudit } from '@/lib/cms/payload/audit'
+import { observeCmsPayloadEvent } from '@/lib/cms/payload/monitoring'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -27,6 +28,14 @@ export async function POST(request: NextRequest) {
   })
 
   if (!access.authorized) {
+    const status = access.errorCode === 'FORBIDDEN' ? 403 : 401
+    await observeCmsPayloadEvent({
+      routeKey: 'POST /api/cms/payload/sync',
+      statusCode: status,
+      phase: 'auth',
+      errorCode: access.errorCode,
+    })
+
     return NextResponse.json(
       {
         success: false,
@@ -35,7 +44,7 @@ export async function POST(request: NextRequest) {
           message: access.errorMessage ?? 'Unauthorized',
         },
       } satisfies ApiResponse<never>,
-      { status: access.errorCode === 'FORBIDDEN' ? 403 : 401 },
+      { status },
     )
   }
 
@@ -70,6 +79,13 @@ export async function POST(request: NextRequest) {
       isActive: !result.dryRun,
     })
 
+    await observeCmsPayloadEvent({
+      routeKey: 'POST /api/cms/payload/sync',
+      statusCode: result.success ? 200 : 207,
+      phase: 'sync',
+      errorCode: result.success ? undefined : 'SYNC_PARTIAL',
+    })
+
     return NextResponse.json(
       {
         success: result.success,
@@ -86,6 +102,13 @@ export async function POST(request: NextRequest) {
       reason: 'sync_failed',
       funnelSlug: body.slug,
       isActive: false,
+    })
+
+    await observeCmsPayloadEvent({
+      routeKey: 'POST /api/cms/payload/sync',
+      statusCode: 500,
+      phase: 'sync',
+      errorCode: 'SYNC_FAILED',
     })
 
     return NextResponse.json(

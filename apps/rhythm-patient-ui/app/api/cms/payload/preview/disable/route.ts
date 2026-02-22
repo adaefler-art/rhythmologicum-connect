@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { draftMode } from 'next/headers'
 import { resolveCmsAccess } from '@/lib/cms/payload/access'
 import { CMS_AUDIT_ACTION, CMS_AUDIT_ENTITY, logCmsPayloadAudit } from '@/lib/cms/payload/audit'
+import { observeCmsPayloadEvent } from '@/lib/cms/payload/monitoring'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -18,6 +19,13 @@ export async function GET(request: NextRequest) {
   const authorized = access.authorized || querySecretValid
 
   if (!authorized) {
+    await observeCmsPayloadEvent({
+      routeKey: 'GET /api/cms/payload/preview/disable',
+      statusCode: 401,
+      phase: 'auth',
+      errorCode: 'UNAUTHORIZED',
+    })
+
     return NextResponse.json(
       {
         success: false,
@@ -40,5 +48,12 @@ export async function GET(request: NextRequest) {
   })
 
   const redirectUrl = new URL('/patient/start', request.url)
+
+  await observeCmsPayloadEvent({
+    routeKey: 'GET /api/cms/payload/preview/disable',
+    statusCode: 307,
+    phase: 'preview',
+  })
+
   return NextResponse.redirect(redirectUrl)
 }

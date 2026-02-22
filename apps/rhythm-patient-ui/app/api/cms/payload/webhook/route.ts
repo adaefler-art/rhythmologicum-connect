@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { syncPayloadContentPages } from '@/lib/cms/payload/sync'
 import { CMS_AUDIT_ACTION, CMS_AUDIT_ENTITY, logCmsPayloadAudit } from '@/lib/cms/payload/audit'
+import { observeCmsPayloadEvent } from '@/lib/cms/payload/monitoring'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -32,6 +33,13 @@ function isAuthorizedWebhook(request: NextRequest): boolean {
 
 export async function POST(request: NextRequest) {
   if (!isAuthorizedWebhook(request)) {
+    await observeCmsPayloadEvent({
+      routeKey: 'POST /api/cms/payload/webhook',
+      statusCode: 401,
+      phase: 'auth',
+      errorCode: 'UNAUTHORIZED',
+    })
+
     return NextResponse.json(
       {
         success: false,
@@ -71,6 +79,13 @@ export async function POST(request: NextRequest) {
       revalidatePath(`/patient/content/${encodeURIComponent(slug)}`)
     }
 
+    await observeCmsPayloadEvent({
+      routeKey: 'POST /api/cms/payload/webhook',
+      statusCode: syncResult.success ? 200 : 207,
+      phase: 'webhook',
+      errorCode: syncResult.success ? undefined : 'SYNC_PARTIAL',
+    })
+
     return NextResponse.json({
       success: syncResult.success,
       data: {
@@ -90,6 +105,13 @@ export async function POST(request: NextRequest) {
       reason: 'webhook_processing_failed',
       funnelSlug: slug,
       isActive: false,
+    })
+
+    await observeCmsPayloadEvent({
+      routeKey: 'POST /api/cms/payload/webhook',
+      statusCode: 500,
+      phase: 'webhook',
+      errorCode: 'WEBHOOK_PROCESSING_FAILED',
     })
 
     return NextResponse.json(

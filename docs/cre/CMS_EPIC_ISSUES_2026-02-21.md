@@ -35,7 +35,7 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
 | CMS-E1-04 | CMS-Plattformentscheidung (Payload vs SaaS) | P1 | S | done | CMS-E1-01 |
 | CMS-E1-05 | CMS-Integration (Sync/Webhook + Preview) | P1 | M-L | in_progress | CMS-E1-02, CMS-E1-03, CMS-E1-04 |
 | CMS-E1-06 | Editorial Workflow + Rollen + Audit | P1 | M | in_progress | CMS-E1-05 |
-| CMS-E1-07 | QA/Security/Monitoring Content-Pipeline | P1 | M | todo | CMS-E1-05 |
+| CMS-E1-07 | QA/Security/Monitoring Content-Pipeline | P1 | M | in_progress | CMS-E1-05 |
 
 ---
 
@@ -132,18 +132,24 @@ Aktueller Stand:
 - Backend-Guardrails aktiv: CMS-Sync/Preview erlauben Secret oder Rolle `clinician/admin`.
 - Audit-Events für Sync/Webhook/Preview-Enable/Disable werden serverseitig protokolliert.
 
-### [ ] CMS-E1-07 — QA/Security/Monitoring Content-Pipeline
-- **Status**: todo
+### [~] CMS-E1-07 — QA/Security/Monitoring Content-Pipeline
+- **Status**: in_progress
 - **Owner**: QA + Backend + Patient UI
 - **Ziel**: Laufende Qualität und Sicherheit für Content-Auslieferung sicherstellen.
 - **Tasks**:
-  - [ ] Testmatrix für `published`/`draft`/`404`/XSS/Responsive definieren
-  - [ ] Automatisierte Smoke-Checks für kritische Contentpfade ergänzen
-  - [ ] Monitoring/Alerting für Render-/Sync-Fehler aktivieren
+  - [x] Testmatrix für `published`/`draft`/`404`/XSS/Responsive definieren
+  - [x] Automatisierte Smoke-Checks für kritische Contentpfade ergänzen
+  - [x] Monitoring/Alerting für Render-/Sync-Fehler aktivieren
 - **Akzeptanzkriterien**:
-  - [ ] Kritische Contentpfade sind reproduzierbar testbar
-  - [ ] Sicherheitsprüfungen (XSS/HTML-Policy) dokumentiert und bestanden
-  - [ ] Alerting auf Pipeline-Fehler aktiv
+  - [x] Kritische Contentpfade sind reproduzierbar testbar
+  - [~] Sicherheitsprüfungen (XSS/HTML-Policy) dokumentiert und bestanden
+  - [x] Alerting auf Pipeline-Fehler aktiv
+
+Aktueller Stand:
+
+- Smoke-Test-Suite für CMS-API-Pfade ergänzt (`routes.smoke.test.ts`).
+- Monitoring-Instrumentierung mit Route-Key-Telemetrie + 5xx-Alert-Log aktiv (`lib/cms/payload/monitoring.ts`).
+- Testmatrix/Runbook dokumentiert: `docs/cre/CMS_E1_07_SMOKE_MONITORING_2026-02-22.md`.
 
 ---
 
