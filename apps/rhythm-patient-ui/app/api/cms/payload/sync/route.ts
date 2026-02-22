@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { syncPayloadContentPages } from '@/lib/cms/payload/sync'
+import { resolveCmsAccess } from '@/lib/cms/payload/access'
+import { CMS_AUDIT_ACTION, CMS_AUDIT_ENTITY, logCmsPayloadAudit } from '@/lib/cms/payload/audit'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -17,24 +19,23 @@ type SyncRequestBody = {
   publishedOnly?: boolean
 }
 
-function isAuthorizedSyncRequest(request: NextRequest): boolean {
-  const expectedSecret = process.env.CMS_PAYLOAD_SYNC_SECRET
-  if (!expectedSecret) {
-    return false
-  }
-
-  const provided = request.headers.get('x-cms-sync-secret')
-  return !!provided && provided === expectedSecret
-}
-
 export async function POST(request: NextRequest) {
-  if (!isAuthorizedSyncRequest(request)) {
+  const access = await resolveCmsAccess(request, {
+    headerName: 'x-cms-sync-secret',
+    secretValue: process.env.CMS_PAYLOAD_SYNC_SECRET,
+    allowRoleAccess: true,
+  })
+
+  if (!access.authorized) {
     return NextResponse.json(
       {
         success: false,
-        error: { code: 'UNAUTHORIZED', message: 'Missing or invalid sync secret' },
+        error: {
+          code: access.errorCode ?? 'UNAUTHORIZED',
+          message: access.errorMessage ?? 'Unauthorized',
+        },
       } satisfies ApiResponse<never>,
-      { status: 401 },
+      { status: access.errorCode === 'FORBIDDEN' ? 403 : 401 },
     )
   }
 
@@ -59,6 +60,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    await logCmsPayloadAudit({
+      actorUserId: access.actorUserId,
+      actorRole: access.actorRole,
+      action: CMS_AUDIT_ACTION.SYNC,
+      entityId: CMS_AUDIT_ENTITY.SYNC,
+      reason: result.success ? 'sync_completed' : 'sync_partial',
+      funnelSlug: body.slug,
+      isActive: !result.dryRun,
+    })
+
     return NextResponse.json(
       {
         success: result.success,
@@ -67,6 +78,16 @@ export async function POST(request: NextRequest) {
       { status: result.success ? 200 : 207 },
     )
   } catch (error) {
+    await logCmsPayloadAudit({
+      actorUserId: access.actorUserId,
+      actorRole: access.actorRole,
+      action: CMS_AUDIT_ACTION.SYNC,
+      entityId: CMS_AUDIT_ENTITY.SYNC,
+      reason: 'sync_failed',
+      funnelSlug: body.slug,
+      isActive: false,
+    })
+
     return NextResponse.json(
       {
         success: false,

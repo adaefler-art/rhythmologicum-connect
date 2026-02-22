@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { syncPayloadContentPages } from '@/lib/cms/payload/sync'
+import { CMS_AUDIT_ACTION, CMS_AUDIT_ENTITY, logCmsPayloadAudit } from '@/lib/cms/payload/audit'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -57,6 +58,14 @@ export async function POST(request: NextRequest) {
       publishedOnly: shouldSyncPublishedOnly,
     })
 
+    await logCmsPayloadAudit({
+      action: CMS_AUDIT_ACTION.WEBHOOK,
+      entityId: CMS_AUDIT_ENTITY.WEBHOOK,
+      reason: syncResult.success ? 'webhook_sync_completed' : 'webhook_sync_partial',
+      funnelSlug: slug,
+      isActive: true,
+    })
+
     revalidatePath('/patient/start')
     if (slug) {
       revalidatePath(`/patient/content/${encodeURIComponent(slug)}`)
@@ -75,6 +84,14 @@ export async function POST(request: NextRequest) {
       sync: typeof syncResult
     }>)
   } catch (error) {
+    await logCmsPayloadAudit({
+      action: CMS_AUDIT_ACTION.WEBHOOK,
+      entityId: CMS_AUDIT_ENTITY.WEBHOOK,
+      reason: 'webhook_processing_failed',
+      funnelSlug: slug,
+      isActive: false,
+    })
+
     return NextResponse.json(
       {
         success: false,

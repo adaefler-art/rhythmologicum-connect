@@ -34,7 +34,7 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
 | CMS-E1-03 | Resolver/API um `blocks` erweitern | P0 | M | in_progress | CMS-E1-01 |
 | CMS-E1-04 | CMS-Plattformentscheidung (Payload vs SaaS) | P1 | S | done | CMS-E1-01 |
 | CMS-E1-05 | CMS-Integration (Sync/Webhook + Preview) | P1 | M-L | in_progress | CMS-E1-02, CMS-E1-03, CMS-E1-04 |
-| CMS-E1-06 | Editorial Workflow + Rollen + Audit | P1 | M | todo | CMS-E1-05 |
+| CMS-E1-06 | Editorial Workflow + Rollen + Audit | P1 | M | in_progress | CMS-E1-05 |
 | CMS-E1-07 | QA/Security/Monitoring Content-Pipeline | P1 | M | todo | CMS-E1-05 |
 
 ---
@@ -115,17 +115,22 @@ Aktueller Stand:
 - Technischer Blueprint + Endpoint-Slice umgesetzt (`sync`, `webhook`, `preview`, `preview/disable`).
 - Dokumentation: `docs/cre/CMS_E1_05_PAYLOAD_INTEGRATION_BLUEPRINT_2026-02-21.md`
 
-### [ ] CMS-E1-06 — Editorial Workflow + Rollen + Audit
-- **Status**: todo
+### [~] CMS-E1-06 — Editorial Workflow + Rollen + Audit
+- **Status**: in_progress
 - **Owner**: Product + Security + Backend
 - **Ziel**: Redaktionsprozess kontrolliert und revisionsfähig machen.
 - **Tasks**:
   - [ ] Workflow `draft -> review -> published -> archived` verbindlich einführen
-  - [ ] Rollenmodell (`editor`, `reviewer`, `publisher`) abbilden
-  - [ ] Audit-Events (wer/wann/was) erfassen
+  - [~] Rollenmodell (`editor`, `reviewer`, `publisher`) abbilden
+  - [~] Audit-Events (wer/wann/was) erfassen
 - **Akzeptanzkriterien**:
-  - [ ] Veröffentlichungen sind rollenbasiert abgesichert
-  - [ ] Änderungen und Publishes sind nachvollziehbar protokolliert
+  - [~] Veröffentlichungen sind rollenbasiert abgesichert
+  - [~] Änderungen und Publishes sind nachvollziehbar protokolliert
+
+Aktueller Stand:
+
+- Backend-Guardrails aktiv: CMS-Sync/Preview erlauben Secret oder Rolle `clinician/admin`.
+- Audit-Events für Sync/Webhook/Preview-Enable/Disable werden serverseitig protokolliert.
 
 ### [ ] CMS-E1-07 — QA/Security/Monitoring Content-Pipeline
 - **Status**: todo

@@ -19,6 +19,8 @@ Implementiert:
 - Preview aktivieren: `GET /api/cms/payload/preview?secret=...&slug=...`
 - Preview deaktivieren: `GET /api/cms/payload/preview/disable`
 - Transform/Markdown-Fallback Tests: `lib/cms/payload/__tests__/sync.test.ts`
+- Access-Guard (Secret ODER Clinician/Admin): `lib/cms/payload/access.ts`
+- Audit-Logging für CMS-Operationen: `lib/cms/payload/audit.ts`
 
 ## Endpoint-Contract
 
@@ -116,6 +118,7 @@ Hinweis:
 ## Fehlerpfade & Recovery
 
 - Ungültiges Secret -> `401 UNAUTHORIZED`
+- Fehlende Rolle bei role-basiertem Zugriff -> `403 FORBIDDEN`
 - Payload API nicht erreichbar/ungültig -> `500 SYNC_FAILED`
 - Funnel-Slug nicht auflösbar -> Teilfehler in Ergebnisliste, Sync läuft weiter
 - DB-Upsert-Fehler -> `success=false` inkl. Fehlermeldung im Response
@@ -129,7 +132,7 @@ Recovery-Strategie:
 ## Offene Punkte für nächsten Schritt
 
 - Direkte Persistenz von `blocks` nach DB-Migration
-- Preview-Auth optional zusätzlich RBAC-härten (z. B. Clinician/Admin)
+- RBAC-Policy für externen Webhook optional auf IP-allowlist/HMAC erweitern
 - Observability (Metriken/Alerts) für Sync-Fehlerpfade
 
 ## Referenzen
