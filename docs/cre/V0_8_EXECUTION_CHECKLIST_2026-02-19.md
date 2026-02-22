@@ -220,7 +220,7 @@ Arbeitspakete (Issue-Mapping):
 - [~] CMS-E1-02 Block-Renderer v1 in Patient UI
 - [~] CMS-E1-03 Resolver/API auf `blocks` erweitern
 - [x] CMS-E1-04 Headless CMS Auswahl + Betriebsentscheidung (Payload vs SaaS)
-- [~] CMS-E1-05 CMS Integration (Sync/Webhook + Preview)
+- [x] CMS-E1-05 CMS Integration (Sync/Webhook + Preview)
 - [~] CMS-E1-06 Editorial Workflow + Rollen + Audit
 - [~] CMS-E1-07 QA/Security/Monitoring für Content-Pipeline
 
@@ -272,6 +272,7 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-21: CMS-E1-05 gestartet: Payload-Integrations-Blueprint + Endpoint-Slice umgesetzt (`/api/cms/payload/sync`, `/api/cms/payload/webhook`, `/api/cms/payload/preview`, `/api/cms/payload/preview/disable`) inkl. Revalidate-Flow, Secret-Guards und Fallback-Transform auf `content_pages.body_markdown` (`lib/cms/payload/sync.ts`, `apps/rhythm-patient-ui/app/api/cms/payload/*`, `docs/cre/CMS_E1_05_PAYLOAD_INTEGRATION_BLUEPRINT_2026-02-21.md`).
 - 2026-02-22: CMS-E1-06 technisch gestartet: serverseitige Rollen-Guardrails (Secret ODER `clinician/admin`) und Audit-Logging für CMS-Sync/Webhook/Preview ergänzt (`lib/cms/payload/access.ts`, `lib/cms/payload/audit.ts`, `apps/rhythm-patient-ui/app/api/cms/payload/*`, `lib/cms/payload/__tests__/access.test.ts`, `docs/cre/CMS_EPIC_ISSUES_2026-02-21.md`).
 - 2026-02-22: CMS-E1-07 gestartet: automatisierte Route-Smoke-Checks und Monitoring/Alerting für CMS-Payload-Pipeline ergänzt (Route-Key-Telemetrie + 5xx-Alert-Logs) (`apps/rhythm-patient-ui/app/api/cms/payload/__tests__/routes.smoke.test.ts`, `lib/cms/payload/monitoring.ts`, `apps/rhythm-patient-ui/app/api/cms/payload/*`, `docs/cre/CMS_E1_07_SMOKE_MONITORING_2026-02-22.md`, `docs/cre/CMS_EPIC_ISSUES_2026-02-21.md`).
+- 2026-02-22: CMS-E1-05 abgeschlossen: direkte `blocks`-Persistenz für Payload-Sync ergänzt (DB-Migration `content_pages.blocks`, Schema-/Type-Update, Sync-Upsert inkl. 42703-Kompatibilitätsfallback) (`supabase/migrations/20260222090000_add_blocks_to_content_pages.sql`, `schema/schema.sql`, `lib/types/supabase.ts`, `lib/cms/payload/sync.ts`, `lib/cms/payload/__tests__/sync.test.ts`, `docs/cre/CMS_EPIC_ISSUES_2026-02-21.md`).
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).

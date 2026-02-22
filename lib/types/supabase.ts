@@ -890,6 +890,7 @@ export type Database = {
       }
       content_pages: {
         Row: {
+          blocks: Json | null
           body_markdown: string
           category: string | null
           created_at: string
@@ -910,6 +911,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          blocks?: Json | null
           body_markdown: string
           category?: string | null
           created_at?: string
@@ -930,6 +932,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          blocks?: Json | null
           body_markdown?: string
           category?: string | null
           created_at?: string

@@ -33,7 +33,7 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
 | CMS-E1-02 | Patient Block-Renderer v1 (Block-First) | P0 | M | in_progress | CMS-E1-01 |
 | CMS-E1-03 | Resolver/API um `blocks` erweitern | P0 | M | in_progress | CMS-E1-01 |
 | CMS-E1-04 | CMS-Plattformentscheidung (Payload vs SaaS) | P1 | S | done | CMS-E1-01 |
-| CMS-E1-05 | CMS-Integration (Sync/Webhook + Preview) | P1 | M-L | in_progress | CMS-E1-02, CMS-E1-03, CMS-E1-04 |
+| CMS-E1-05 | CMS-Integration (Sync/Webhook + Preview) | P1 | M-L | done | CMS-E1-02, CMS-E1-03, CMS-E1-04 |
 | CMS-E1-06 | Editorial Workflow + Rollen + Audit | P1 | M | in_progress | CMS-E1-05 |
 | CMS-E1-07 | QA/Security/Monitoring Content-Pipeline | P1 | M | in_progress | CMS-E1-05 |
 
@@ -97,8 +97,8 @@ Ergebnis:
 - Entscheidung: Payload CMS (self-hosted)
 - Begründung und Matrix: `docs/cre/CMS_PLATFORM_DECISION_ADR_2026-02-21.md`
 
-### [~] CMS-E1-05 — CMS-Integration (Sync/Webhook + Preview)
-- **Status**: in_progress
+### [x] CMS-E1-05 — CMS-Integration (Sync/Webhook + Preview)
+- **Status**: done
 - **Owner**: Backend + Patient UI
 - **Ziel**: Inhalte aus CMS automatisiert in die App liefern, inkl. Vorschau.
 - **Tasks**:
@@ -114,6 +114,7 @@ Aktueller Stand:
 
 - Technischer Blueprint + Endpoint-Slice umgesetzt (`sync`, `webhook`, `preview`, `preview/disable`).
 - Dokumentation: `docs/cre/CMS_E1_05_PAYLOAD_INTEGRATION_BLUEPRINT_2026-02-21.md`
+- Direkte `blocks`-Persistenz ergänzt (DB-Migration + Sync-Upsert + Fallback für ältere DB-Schemata).
 
 ### [~] CMS-E1-06 — Editorial Workflow + Rollen + Audit
 - **Status**: in_progress

@@ -47,5 +47,7 @@ describe('payload sync transform', () => {
     expect(mapped.title).toBe('Stress verstehen')
     expect(mapped.status).toBe('published')
     expect(mapped.body_markdown).toContain('Stress ist eine natürliche Reaktion.')
+    expect(Array.isArray(mapped.blocks)).toBe(true)
+    expect((mapped.blocks as Array<{ type: string }>)[0]?.type).toBe('rich_text')
   })
 })

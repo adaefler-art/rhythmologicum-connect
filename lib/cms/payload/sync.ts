@@ -132,6 +132,7 @@ export function mapPayloadDocToContentPageInsert(
     seo_title: doc.seo_title ?? null,
     seo_description: doc.seo_description ?? null,
     teaser_image_url: doc.teaser_image_url ?? null,
+    blocks: parsedBlocks,
     updated_at: new Date().toISOString(),
   }
 }
@@ -249,9 +250,22 @@ export async function syncPayloadContentPages(
   }
 
   const admin = createAdminSupabaseClient()
-  const { error: upsertError } = await admin
+  let { error: upsertError } = await admin
     .from('content_pages')
     .upsert(rows, { onConflict: 'slug' })
+
+  if (upsertError?.code === '42703') {
+    const rowsWithoutBlocks = rows.map((row) => {
+      const { blocks: _ignored, ...rest } = row
+      return rest
+    })
+
+    const fallbackUpsert = await admin
+      .from('content_pages')
+      .upsert(rowsWithoutBlocks, { onConflict: 'slug' })
+
+    upsertError = fallbackUpsert.error
+  }
 
   if (upsertError) {
     return {

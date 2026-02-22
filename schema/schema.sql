@@ -3076,7 +3076,8 @@ CREATE TABLE IF NOT EXISTS "public"."content_pages" (
     "seo_description" "text",
     "flow_step" "text",
     "order_index" integer,
-    "teaser_image_url" "text"
+    "teaser_image_url" "text",
+    "blocks" "jsonb"
 );
 
 
@@ -3120,6 +3121,10 @@ COMMENT ON COLUMN "public"."content_pages"."order_index" IS 'Determines the disp
 
 
 COMMENT ON COLUMN "public"."content_pages"."teaser_image_url" IS 'Optional teaser image URL for card/slider presentation.';
+
+
+
+COMMENT ON COLUMN "public"."content_pages"."blocks" IS 'Optional structured CMS blocks payload (JSONB) used for block-first content rendering.';
 
 
 

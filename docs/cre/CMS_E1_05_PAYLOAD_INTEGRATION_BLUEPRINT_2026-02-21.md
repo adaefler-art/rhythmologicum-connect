@@ -112,8 +112,8 @@ Quelle Payload -> Ziel `content_pages`:
 
 Hinweis:
 
-- Dieser Schritt ist kompatibel mit aktuellem DB-Schema.
-- Direkte `blocks`-Persistenz folgt in einem separaten Schema-/Migration-Schritt.
+- Direkte `blocks`-Persistenz ist umgesetzt über Migration `20260222090000_add_blocks_to_content_pages.sql`.
+- Sync enthält weiterhin einen 42703-Kompatibilitätsfallback für ältere Umgebungen ohne migriertes Schema.
 
 ## Fehlerpfade & Recovery
 
