@@ -6450,6 +6450,10 @@ CREATE INDEX "idx_content_page_sections_page_id" ON "public"."content_page_secti
 
 
 
+CREATE INDEX "idx_content_pages_blocks_gin" ON "public"."content_pages" USING "gin" ("blocks");
+
+
+
 CREATE INDEX "idx_content_pages_deleted_at" ON "public"."content_pages" USING "btree" ("deleted_at") WHERE ("deleted_at" IS NOT NULL);
 
 
