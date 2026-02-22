@@ -427,6 +427,14 @@ export async function fetchNavItemsForRole(
       })
     }
 
+    if ((role === 'admin' || role === 'clinician') && !navItems.some((item) => item.href === '/admin/cms')) {
+      navItems.push({
+        href: '/admin/cms',
+        label: 'CMS',
+        active: pathname?.startsWith('/admin/cms') ?? false,
+      })
+    }
+
     // If we got items from DB, return them
     if (navItems.length > 0) {
       return navItems

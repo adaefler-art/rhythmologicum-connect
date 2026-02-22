@@ -31,7 +31,7 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
 |---|---|---|---|---|---|
 | CMS-E1-01 | Block-Contract v1 + Content-Typen | P0 | S-M | done | - |
 | CMS-E1-02 | Patient Block-Renderer v1 (Block-First) | P0 | M | in_progress | CMS-E1-01 |
-| CMS-E1-03 | Resolver/API um `blocks` erweitern | P0 | M | in_progress | CMS-E1-01 |
+| CMS-E1-03 | Resolver/API um `blocks` erweitern | P0 | M | done | CMS-E1-01 |
 | CMS-E1-04 | CMS-Plattformentscheidung (Payload vs SaaS) | P1 | S | done | CMS-E1-01 |
 | CMS-E1-05 | CMS-Integration (Sync/Webhook + Preview) | P1 | M-L | done | CMS-E1-02, CMS-E1-03, CMS-E1-04 |
 | CMS-E1-06 | Editorial Workflow + Rollen + Audit | P1 | M | in_progress | CMS-E1-05 |
@@ -67,8 +67,8 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
   - [x] Seiten ohne `blocks[]` funktionieren unverändert
   - [x] Keine freie HTML-Ausführung im Renderer möglich
 
-### [~] CMS-E1-03 — Resolver/API um `blocks` erweitern
-- **Status**: in_progress
+### [x] CMS-E1-03 — Resolver/API um `blocks` erweitern
+- **Status**: done
 - **Owner**: Backend
 - **Ziel**: Resolver und API liefern Block-Daten konsistent aus.
 - **Tasks**:
@@ -78,7 +78,7 @@ Headless-CMS-fähige Content-Pipeline für patient-facing Seiten etablieren, mit
 - **Akzeptanzkriterien**:
   - [x] API liefert `blocks` für veröffentlichte Seiten deterministisch
   - [x] 404-/Fallback-Logik bleibt konsistent
-  - [ ] Keine Regression in `content-slider` und Slug-Routen
+  - [x] Keine Regression in `content-slider` und Slug-Routen
 
 ### [x] CMS-E1-04 — CMS-Plattformentscheidung (Payload vs SaaS)
 - **Status**: done
